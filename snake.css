@@ -482,6 +482,11 @@ body {
     text-shadow: var(--glow-green);
 }
 
+.settings-title-quake {
+    color: var(--neon-purple);
+    text-shadow: 0 0 10px rgba(176, 38, 255, 0.55), 0 0 20px rgba(176, 38, 255, 0.28);
+}
+
 .settings-copy {
     font-size: 12px;
     line-height: 1.5;
@@ -527,6 +532,48 @@ body {
     border-color: rgba(0, 240, 255, 0.85);
     box-shadow: var(--glow-cyan);
     background: rgba(0, 240, 255, 0.08);
+}
+
+.toggle-option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(176, 38, 255, 0.22);
+    background: rgba(176, 38, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toggle-option:hover {
+    border-color: rgba(176, 38, 255, 0.6);
+    box-shadow: 0 0 16px rgba(176, 38, 255, 0.18);
+}
+
+.toggle-option input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--neon-purple);
+    flex-shrink: 0;
+}
+
+.toggle-option span {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.toggle-option strong {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    color: #ffffff;
+}
+
+.toggle-option small {
+    color: rgba(255, 255, 255, 0.62);
+    line-height: 1.45;
 }
 
 /* Guía de Controles */
