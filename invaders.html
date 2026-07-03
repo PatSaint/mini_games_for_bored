@@ -71,9 +71,12 @@
         }
         .hidden { display: none !important; }
         .menu-content {
-            background: var(--panel-bg); border: 1px solid var(--border-color); padding: 32px; border-radius: 24px; max-width: 560px; width: min(100%, 560px);
+            background: var(--panel-bg); border: 1px solid var(--border-color); padding: clamp(20px, 4vh, 32px); border-radius: 24px; max-width: 560px; width: min(100%, 560px);
+            max-height: calc(100vh - 48px); overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box;
             text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.6); display: flex; flex-direction: column; align-items: stretch; gap: 16px;
         }
+        .menu-content::-webkit-scrollbar { width: 8px; }
+        .menu-content::-webkit-scrollbar-thumb { background: rgba(176, 38, 255, 0.35); border-radius: 999px; }
         .game-title { font-family: 'Orbitron', sans-serif; font-size: 34px; font-weight: 900; line-height: 1.1; color: var(--neon-purple); text-shadow: var(--glow-purple); }
         .game-title span { color: var(--neon-cyan); text-shadow: var(--glow-cyan); }
         .game-subtitle { font-size: 14px; color: rgba(255,255,255,.68); line-height: 1.5; }
@@ -126,7 +129,7 @@
         @media (max-width: 768px) { .dpad-actions-layout { display: flex; } }
         @media (max-width: 640px) {
             .form-grid, .button-row, .quick-links { grid-template-columns: 1fr; }
-            .menu-content { padding: 22px; max-height: calc(100vh - 32px); overflow: auto; }
+            .menu-content { padding: 22px; max-height: calc(100vh - 32px); }
             .game-title { font-size: 28px; }
             #hud { top: 72px; width: calc(100% - 24px); }
         }

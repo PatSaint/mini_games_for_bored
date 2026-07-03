@@ -148,6 +148,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 16px;
         }
 
         .overlay-screen.hidden {
@@ -161,10 +162,14 @@
         .menu-content {
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
-            padding: 40px;
+            padding: clamp(20px, 4vh, 40px);
             border-radius: 24px;
             max-width: 440px;
-            width: 90%;
+            width: min(92vw, 440px);
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            box-sizing: border-box;
             text-align: center;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
             display: flex;
@@ -173,6 +178,9 @@
             gap: 20px;
             animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
+        .menu-content::-webkit-scrollbar { width: 8px; }
+        .menu-content::-webkit-scrollbar-thumb { background: rgba(255, 0, 127, 0.35); border-radius: 999px; }
 
         .game-title {
             font-family: 'Orbitron', sans-serif;

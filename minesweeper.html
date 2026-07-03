@@ -43,7 +43,9 @@
         .tool-btn.active { color: var(--neon-cyan); border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); }
         .overlay-screen { position: absolute; inset: 0; background: rgba(0,0,0,.86); backdrop-filter: blur(8px); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 24px; }
         .hidden { display: none !important; }
-        .menu-content { background: var(--panel-bg); border: 1px solid var(--border-color); padding: 30px; border-radius: 24px; max-width: 580px; width: min(100%, 580px); display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
+        .menu-content { background: var(--panel-bg); border: 1px solid var(--border-color); padding: clamp(20px, 4vh, 30px); border-radius: 24px; max-width: 580px; width: min(100%, 580px); max-height: calc(100vh - 48px); overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
+        .menu-content::-webkit-scrollbar { width: 8px; }
+        .menu-content::-webkit-scrollbar-thumb { background: rgba(255, 204, 0, 0.35); border-radius: 999px; }
         .game-title { font-family: 'Orbitron', sans-serif; font-size: 34px; font-weight: 900; color: var(--neon-yellow); text-shadow: var(--glow-yellow); text-align: center; line-height: 1.1; }
         .game-title span { color: var(--neon-pink); text-shadow: var(--glow-pink); }
         .game-subtitle { text-align: center; font-size: 14px; color: rgba(255,255,255,.68); line-height: 1.5; }
@@ -64,7 +66,7 @@
         .score-nick { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .score-points { font-family: 'Orbitron', monospace; color: var(--neon-cyan); }
         .top-note { font-size: 12px; color: rgba(255,255,255,.56); }
-        @media (max-width: 640px) { .form-grid, .button-row, .quick-links { grid-template-columns: 1fr; } .menu-content { padding: 22px; max-height: calc(100vh - 32px); overflow: auto; } }
+        @media (max-width: 640px) { .form-grid, .button-row, .quick-links { grid-template-columns: 1fr; } .menu-content { padding: 22px; max-height: calc(100vh - 32px); } }
         @media (max-width: 480px) { .back-btn { top: 12px; left: 12px; padding: 6px 12px; font-size: 9px; } .branding { top: 12px; right: 12px; font-size: 10px; } }
     </style>
 </head>

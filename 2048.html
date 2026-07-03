@@ -36,7 +36,9 @@
         .instructions li + li { margin-top:6px; }
         .overlay-screen { inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.84); backdrop-filter:blur(8px); }
         .hidden { display:none !important; }
-        .menu-content { width:min(94vw,560px); max-height:88vh; overflow:auto; background:var(--panel); border:1px solid var(--border); border-radius:24px; padding:28px; display:flex; flex-direction:column; gap:16px; box-shadow:0 20px 50px rgba(0,0,0,.6); }
+        .menu-content { width:min(94vw,560px); max-height:calc(100vh - 32px); overflow-y:auto; overscroll-behavior:contain; box-sizing:border-box; background:var(--panel); border:1px solid var(--border); border-radius:24px; padding:clamp(20px, 4vh, 28px); display:flex; flex-direction:column; gap:16px; box-shadow:0 20px 50px rgba(0,0,0,.6); }
+        .menu-content::-webkit-scrollbar { width:8px; }
+        .menu-content::-webkit-scrollbar-thumb { background:rgba(57,255,20,.35); border-radius:999px; }
         .game-title { text-align:center; font:900 38px 'Orbitron',sans-serif; line-height:1; color:var(--green); text-shadow:0 0 14px rgba(57,255,20,.5); }
         .game-title span { color:var(--cyan); text-shadow:0 0 14px rgba(0,240,255,.55); }
         .game-subtitle,.muted { color:rgba(255,255,255,.72); line-height:1.45; font-size:14px; }
