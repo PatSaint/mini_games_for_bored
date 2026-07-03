@@ -31,6 +31,7 @@ const leaderboardStart = document.getElementById('leaderboardStart');
 const leaderboardPause = document.getElementById('leaderboardPause');
 const leaderboardGameOver = document.getElementById('leaderboardGameOver');
 const controlModeInputs = Array.from(document.querySelectorAll('input[name="mobileControlMode"]'));
+const quakeModeToggle = document.getElementById('quakeModeToggle');
 const controlGuideKey = document.getElementById('controlGuideKey');
 const controlGuidePrimary = document.getElementById('controlGuidePrimary');
 const controlGuideSecondary = document.getElementById('controlGuideSecondary');
@@ -65,8 +66,10 @@ const CONTROL_MODES = {
     BUTTONS: 'buttons'
 };
 const CONTROL_MODE_STORAGE_KEY = 'neonSnakeMobileControlMode';
+const QUAKE_MODE_STORAGE_KEY = 'neonSnakeQuakeMode';
 const isTouchDevice = Boolean(window.BORED_DEVICE?.isTouchDevice);
 let currentMobileControlMode = loadMobileControlMode();
+let quakeModeEnabled = loadQuakeModePreference();
 
 // Configuración de la Rejilla y Dimensiones
 const TARGET_CELL_SIZE = 25; // Tamaño objetivo en píxeles de cada celda
@@ -86,6 +89,12 @@ let nextDir = { x: 1, y: 0 };  // Siguiente dirección (evita auto-colisión rá
 // Comida
 let foodItems = [];
 const MAX_FOOD_ITEMS = 4; // Tener varios puntos de colores en la ventana
+let quakeWalls = [];
+let quakeBonusItem = null;
+let quakePenaltyItem = null;
+let nextQuakeWallSpawnAt = 0;
+let nextQuakeBonusSpawnAt = 0;
+let nextQuakePenaltySpawnAt = 0;
 
 // Partículas de efectos (Micro-animaciones)
 let particles = [];
@@ -111,6 +120,8 @@ const COPY = {
             meta: { title: 'Neon Snake | Juego Retro-Moderno' },
             length: 'LARGO', selectedLevel: 'Nivel seleccionado:', multiplier: 'Multiplicador:', mobileControls: 'CONTROL MÓVIL',
             mobileControlsCopy: 'Elegí cómo querés jugar en táctil. Se guarda automáticamente y en desktop seguís usando teclado.',
+            quakeModeTitle: 'QUAKE MODE', quakeModeCopy: 'Sumá muros aleatorios temporales y pickups extremos sin tocar el Snake clásico. Se guarda automáticamente.',
+            quakeModeToggle: 'ACTIVAR QUAKE', quakeModeHint: 'Muros letales que desaparecen + bonus x10 temporal + item de puntaje negativo.',
             buttons: 'BOTONES', resizeCopy: 'La rejilla y el nivel han sido adaptados al nuevo tamaño.', newDimension: 'Nueva dimensión:', newLevel: 'Nuevo nivel:', swipeGrid: 'DESLIZÁ SOBRE LA GRILLA',
             emptyScores: 'Todavía no hay partidas guardadas.', levelShort: 'Nv', nicknameRequired: 'Ingresá tu nombre antes de arrancar Snake.'
         }
@@ -126,6 +137,8 @@ const COPY = {
             meta: { title: 'Neon Snake | Retro-Modern Game' },
             length: 'LENGTH', selectedLevel: 'Selected level:', multiplier: 'Multiplier:', mobileControls: 'MOBILE CONTROLS',
             mobileControlsCopy: 'Choose how you want to play on touch. It saves automatically, and desktop still uses keyboard controls.',
+            quakeModeTitle: 'QUAKE MODE', quakeModeCopy: 'Add temporary random walls and extreme pickups without touching classic Snake. It saves automatically.',
+            quakeModeToggle: 'ENABLE QUAKE', quakeModeHint: 'Lethal walls that disappear + temporary x10 bonus + negative-score pickup.',
             buttons: 'BUTTONS', resizeCopy: 'The grid and level were adapted to the new size.', newDimension: 'New size:', newLevel: 'New level:', swipeGrid: 'SWIPE ON THE GRID',
             emptyScores: 'No saved runs yet.', levelShort: 'Lv', nicknameRequired: 'Enter your name before starting Snake.'
         }
@@ -138,6 +151,20 @@ i18n?.registerTranslations('snake', COPY, applyLanguage);
 let lastTickTime = 0;
 let baseHue = 0; // Para el arcoíris animado del gusanito
 let pulseAnimationTime = 0; // Para la comida pulsante
+
+const QUAKE_SETTINGS = {
+    wallSpawnMinMs: 3200,
+    wallSpawnMaxMs: 5200,
+    wallLifeMinMs: 3800,
+    wallLifeMaxMs: 7600,
+    wallMaxCount: 18,
+    bonusLifeMinMs: 3000,
+    bonusLifeMaxMs: 5000,
+    bonusRespawnMinMs: 5500,
+    bonusRespawnMaxMs: 9000,
+    penaltyRespawnMinMs: 2800,
+    penaltyRespawnMaxMs: 5200
+};
 
 // Inicializar el récord en pantalla
 highScoreDisplay.textContent = highScore;
@@ -159,6 +186,78 @@ function loadMobileControlMode() {
     } catch {
         return CONTROL_MODES.SWIPE;
     }
+}
+
+function loadQuakeModePreference() {
+    try {
+        return localStorage.getItem(QUAKE_MODE_STORAGE_KEY) === 'true';
+    } catch {
+        return false;
+    }
+}
+
+function saveQuakeModePreference(enabled) {
+    try {
+        localStorage.setItem(QUAKE_MODE_STORAGE_KEY, String(Boolean(enabled)));
+    } catch {
+        // no-op
+    }
+}
+
+function applyQuakeModePreference(enabled, options = {}) {
+    quakeModeEnabled = Boolean(enabled);
+    if (quakeModeToggle) {
+        quakeModeToggle.checked = quakeModeEnabled;
+    }
+    if (options.persist !== false) {
+        saveQuakeModePreference(quakeModeEnabled);
+    }
+}
+
+function randomBetween(min, max) {
+    return min + Math.random() * (max - min);
+}
+
+function randomInt(min, max) {
+    return Math.floor(randomBetween(min, max + 1));
+}
+
+function isSameCell(a, b) {
+    return a?.x === b?.x && a?.y === b?.y;
+}
+
+function isWallCell(x, y) {
+    return quakeWalls.some((wall) => wall.cells.some((cell) => cell.x === x && cell.y === y));
+}
+
+function isCellOccupied(x, y, options = {}) {
+    const {
+        ignoreFood = false,
+        ignoreBonus = false,
+        ignorePenalty = false,
+        ignoreWalls = false,
+        ignoreSnake = false
+    } = options;
+
+    if (!ignoreSnake && snake.some((segment) => segment.x === x && segment.y === y)) return true;
+    if (!ignoreFood && foodItems.some((food) => food.x === x && food.y === y)) return true;
+    if (!ignoreWalls && isWallCell(x, y)) return true;
+    if (!ignoreBonus && quakeBonusItem && quakeBonusItem.x === x && quakeBonusItem.y === y) return true;
+    if (!ignorePenalty && quakePenaltyItem && quakePenaltyItem.x === x && quakePenaltyItem.y === y) return true;
+
+    return false;
+}
+
+function getRandomFreeCell(options = {}) {
+    const attemptsLimit = Math.max(120, cols * rows * 2);
+    for (let attempts = 0; attempts < attemptsLimit; attempts++) {
+        const x = Math.floor(Math.random() * cols);
+        const y = Math.floor(Math.random() * rows);
+        if (!isCellOccupied(x, y, options)) {
+            return { x, y };
+        }
+    }
+    return null;
 }
 
 function saveMobileControlMode(mode) {
@@ -501,9 +600,17 @@ function startGame() {
     
     // Vaciar y regenerar comida
     foodItems = [];
+    quakeWalls = [];
+    quakeBonusItem = null;
+    quakePenaltyItem = null;
     for (let i = 0; i < MAX_FOOD_ITEMS; i++) {
         spawnFood();
     }
+
+    const now = performance.now();
+    nextQuakeWallSpawnAt = now + randomBetween(QUAKE_SETTINGS.wallSpawnMinMs, QUAKE_SETTINGS.wallSpawnMaxMs);
+    nextQuakeBonusSpawnAt = now + randomBetween(QUAKE_SETTINGS.bonusRespawnMinMs, QUAKE_SETTINGS.bonusRespawnMaxMs);
+    nextQuakePenaltySpawnAt = now + randomBetween(800, 1800);
     
     particles = [];
     
@@ -540,6 +647,8 @@ function resumeGameAfterResize() {
         food.x = Math.min(food.x, cols - 1);
         food.y = Math.min(food.y, rows - 1);
     });
+
+    normalizeQuakeEntitiesAfterResize();
     
     currentState = STATES.PLAYING;
     hideOverlay();
@@ -579,37 +688,157 @@ function hideOverlay() {
 }
 
 function spawnFood() {
-    let newX, newY;
-    let valid = false;
-    let attempts = 0;
-    
-    while (!valid && attempts < 100) {
-        newX = Math.floor(Math.random() * cols);
-        newY = Math.floor(Math.random() * rows);
-        attempts++;
-        
-        // Verificar que no aparezca sobre el gusanito
-        const onSnake = snake.some(segment => segment.x === newX && segment.y === newY);
-        
-        // Verificar que no aparezca sobre otra comida
-        const onFood = foodItems.some(food => food.x === newX && food.y === newY);
-        
-        if (!onSnake && !onFood) {
-            valid = true;
-        }
-    }
+    const freeCell = getRandomFreeCell();
+    if (!freeCell) return;
     
     // Color aleatorio neón vibrante en HSL
     const randomHue = Math.floor(Math.random() * 360);
     const color = `hsl(${randomHue}, 100%, 55%)`;
     
     foodItems.push({
-        x: newX,
-        y: newY,
+        x: freeCell.x,
+        y: freeCell.y,
         color: color,
         hue: randomHue,
         pulsePhase: Math.random() * Math.PI * 2 // Desfase aleatorio para animación individual
     });
+}
+
+function spawnQuakeWall() {
+    if (!quakeModeEnabled || quakeWalls.length >= QUAKE_SETTINGS.wallMaxCount) return;
+
+    for (let attempt = 0; attempt < 40; attempt++) {
+        const width = randomInt(1, 3);
+        const height = randomInt(1, 2);
+        const originX = randomInt(0, Math.max(0, cols - width));
+        const originY = randomInt(0, Math.max(0, rows - height));
+        const cells = [];
+        let valid = true;
+
+        for (let dx = 0; dx < width && valid; dx++) {
+            for (let dy = 0; dy < height; dy++) {
+                const x = originX + dx;
+                const y = originY + dy;
+                if (isCellOccupied(x, y)) {
+                    valid = false;
+                    break;
+                }
+                cells.push({ x, y });
+            }
+        }
+
+        if (valid && cells.length > 0) {
+            quakeWalls.push({
+                cells,
+                hue: randomInt(270, 330),
+                bornAt: performance.now(),
+                expiresAt: performance.now() + randomBetween(QUAKE_SETTINGS.wallLifeMinMs, QUAKE_SETTINGS.wallLifeMaxMs)
+            });
+            return;
+        }
+    }
+}
+
+function spawnQuakeBonusItem(currentTime) {
+    if (!quakeModeEnabled || quakeBonusItem) return;
+    const freeCell = getRandomFreeCell();
+    if (!freeCell) return;
+
+    quakeBonusItem = {
+        ...freeCell,
+        color: 'rgba(0, 240, 255, 0.95)',
+        expiresAt: currentTime + randomBetween(QUAKE_SETTINGS.bonusLifeMinMs, QUAKE_SETTINGS.bonusLifeMaxMs),
+        pulsePhase: Math.random() * Math.PI * 2
+    };
+}
+
+function spawnQuakePenaltyItem() {
+    if (!quakeModeEnabled || quakePenaltyItem) return;
+    const freeCell = getRandomFreeCell();
+    if (!freeCell) return;
+
+    quakePenaltyItem = {
+        ...freeCell,
+        penalty: randomInt(1, 5),
+        color: 'rgba(255, 7, 58, 0.95)',
+        pulsePhase: Math.random() * Math.PI * 2
+    };
+}
+
+function scheduleNextQuakeWall(currentTime) {
+    nextQuakeWallSpawnAt = currentTime + randomBetween(QUAKE_SETTINGS.wallSpawnMinMs, QUAKE_SETTINGS.wallSpawnMaxMs);
+}
+
+function scheduleNextQuakeBonus(currentTime) {
+    nextQuakeBonusSpawnAt = currentTime + randomBetween(QUAKE_SETTINGS.bonusRespawnMinMs, QUAKE_SETTINGS.bonusRespawnMaxMs);
+}
+
+function scheduleNextQuakePenalty(currentTime) {
+    nextQuakePenaltySpawnAt = currentTime + randomBetween(QUAKE_SETTINGS.penaltyRespawnMinMs, QUAKE_SETTINGS.penaltyRespawnMaxMs);
+}
+
+function normalizeQuakeEntitiesAfterResize() {
+    if (!quakeModeEnabled) return;
+
+    foodItems = foodItems.filter((food, index, allFoods) => {
+        const isInsideGrid = food.x >= 0 && food.x < cols && food.y >= 0 && food.y < rows;
+        const overlapsSnake = snake.some((segment) => segment.x === food.x && segment.y === food.y);
+        const duplicated = allFoods.findIndex((candidate) => candidate.x === food.x && candidate.y === food.y) !== index;
+        return isInsideGrid && !overlapsSnake && !duplicated;
+    });
+
+    quakeWalls = quakeWalls
+        .map((wall) => ({
+            ...wall,
+            cells: wall.cells.filter((cell) => cell.x >= 0 && cell.x < cols && cell.y >= 0 && cell.y < rows)
+        }))
+        .filter((wall) => wall.cells.length > 0 && wall.cells.every((cell) => !isCellOccupied(cell.x, cell.y, { ignoreWalls: true })));
+
+    if (quakeBonusItem && isCellOccupied(quakeBonusItem.x, quakeBonusItem.y, { ignoreBonus: true })) {
+        quakeBonusItem = null;
+    }
+
+    if (quakePenaltyItem && isCellOccupied(quakePenaltyItem.x, quakePenaltyItem.y, { ignorePenalty: true })) {
+        quakePenaltyItem = null;
+    }
+
+    while (foodItems.length < MAX_FOOD_ITEMS) {
+        spawnFood();
+    }
+}
+
+function updateQuakeState(currentTime) {
+    if (!quakeModeEnabled || currentState !== STATES.PLAYING) return;
+
+    if (currentTime >= nextQuakeWallSpawnAt) {
+        spawnQuakeWall();
+        scheduleNextQuakeWall(currentTime);
+    }
+
+    const beforeCount = quakeWalls.length;
+    quakeWalls = quakeWalls.filter((wall) => wall.expiresAt > currentTime);
+    if (beforeCount !== quakeWalls.length) {
+        // No-op: walls naturally disappear after their lifetime expires.
+    }
+
+    if (!quakeBonusItem && currentTime >= nextQuakeBonusSpawnAt) {
+        spawnQuakeBonusItem(currentTime);
+        if (!quakeBonusItem) {
+            scheduleNextQuakeBonus(currentTime);
+        }
+    }
+
+    if (quakeBonusItem && currentTime >= quakeBonusItem.expiresAt) {
+        quakeBonusItem = null;
+        scheduleNextQuakeBonus(currentTime);
+    }
+
+    if (!quakePenaltyItem && currentTime >= nextQuakePenaltySpawnAt) {
+        spawnQuakePenaltyItem();
+        if (!quakePenaltyItem) {
+            scheduleNextQuakePenalty(currentTime);
+        }
+    }
 }
 
 function createEatenParticles(x, y, color) {
@@ -658,12 +887,18 @@ function updatePhysics() {
             return;
         }
     }
+
+    if (quakeModeEnabled && isWallCell(newHead.x, newHead.y)) {
+        gameOver();
+        return;
+    }
     
     // 4. Agregar nueva cabeza
     snake.unshift(newHead);
     
     // 5. Verificar colisión con la comida
     let ateFood = false;
+    let consumedSpecialItem = false;
     for (let i = 0; i < foodItems.length; i++) {
         if (foodItems[i].x === newHead.x && foodItems[i].y === newHead.y) {
             ateFood = true;
@@ -683,10 +918,39 @@ function updatePhysics() {
             break; // Solo puede comer una comida por turno
         }
     }
+
+    if (!ateFood && quakeModeEnabled && isSameCell(newHead, quakeBonusItem)) {
+        consumedSpecialItem = true;
+        audio?.play('snakeEat');
+        score += 10;
+        scoreDisplay.textContent = score;
+        createEatenParticles(quakeBonusItem.x, quakeBonusItem.y, quakeBonusItem.color);
+        quakeBonusItem = null;
+        scheduleNextQuakeBonus(performance.now());
+    }
+
+    if (!ateFood && quakeModeEnabled && isSameCell(newHead, quakePenaltyItem)) {
+        consumedSpecialItem = true;
+        audio?.play('snakeEat');
+        score -= quakePenaltyItem.penalty;
+        scoreDisplay.textContent = score;
+        createEatenParticles(quakePenaltyItem.x, quakePenaltyItem.y, quakePenaltyItem.color);
+        quakePenaltyItem = null;
+        scheduleNextQuakePenalty(performance.now());
+
+        if (score < 0) {
+            gameOver();
+            return;
+        }
+    }
     
     // Si no comió comida, quitar la cola del gusanito
     if (!ateFood) {
         snake.pop();
+    }
+
+    if (consumedSpecialItem) {
+        snakeLengthDisplay.textContent = snake.length;
     }
 }
 
@@ -854,6 +1118,73 @@ function drawFood() {
     });
 }
 
+function drawQuakeWalls() {
+    if (!quakeModeEnabled || quakeWalls.length === 0) return;
+
+        quakeWalls.forEach((wall) => {
+            const wallColor = `hsla(${wall.hue}, 100%, 62%, 0.95)`;
+            const lifeRatio = wall.expiresAt ? Math.max(0.15, Math.min(1, (wall.expiresAt - performance.now()) / (QUAKE_SETTINGS.wallLifeMaxMs || 1))) : 1;
+            wall.cells.forEach((cell) => {
+                const x = cell.x * cellWidth;
+                const y = cell.y * cellHeight;
+                const insetX = cellWidth * 0.08;
+                const insetY = cellHeight * 0.08;
+
+            ctx.save();
+            ctx.globalAlpha = lifeRatio;
+            ctx.shadowBlur = 18;
+            ctx.shadowColor = wallColor;
+            ctx.fillStyle = 'rgba(255, 0, 127, 0.18)';
+            ctx.strokeStyle = wallColor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(x + insetX, y + insetY, cellWidth - insetX * 2, cellHeight - insetY * 2, Math.min(cellWidth, cellHeight) * 0.18);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        });
+    });
+}
+
+function drawQuakeItems() {
+    if (!quakeModeEnabled) return;
+
+    if (quakeBonusItem) {
+        const x = quakeBonusItem.x * cellWidth + cellWidth / 2;
+        const y = quakeBonusItem.y * cellHeight + cellHeight / 2;
+        const pulse = Math.sin(pulseAnimationTime + quakeBonusItem.pulsePhase) * 0.16 + 0.92;
+        const radius = Math.min(cellWidth, cellHeight) * 0.42 * pulse;
+
+        ctx.save();
+        ctx.shadowBlur = 22;
+        ctx.shadowColor = quakeBonusItem.color;
+        ctx.fillStyle = quakeBonusItem.color;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    if (quakePenaltyItem) {
+        const x = quakePenaltyItem.x * cellWidth + cellWidth / 2;
+        const y = quakePenaltyItem.y * cellHeight + cellHeight / 2;
+        const size = Math.min(cellWidth, cellHeight) * 0.72;
+
+        ctx.save();
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = quakePenaltyItem.color;
+        ctx.strokeStyle = quakePenaltyItem.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(x - size / 2, y - size / 2, size, size, size * 0.18);
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
 function drawParticles() {
     ctx.save();
     particles.forEach(p => {
@@ -884,6 +1215,7 @@ function gameLoop(currentTime) {
     
     // Lógica en base al estado actual
     if (currentState === STATES.PLAYING) {
+        updateQuakeState(currentTime);
         // Ejecutar un paso físico solo según la velocidad de juego
         const elapsed = currentTime - lastTickTime;
         if (elapsed >= gameSpeed) {
@@ -897,6 +1229,8 @@ function gameLoop(currentTime) {
     
     // Renderizado dinámico continuo a 60 FPS
     drawFood();
+    drawQuakeWalls();
+    drawQuakeItems();
     drawSnake();
     drawParticles();
 }
@@ -1056,4 +1390,9 @@ function releaseJoystick(pointerId) {
 joystickBase?.addEventListener('pointerup', (event) => releaseJoystick(event.pointerId));
 joystickBase?.addEventListener('pointercancel', (event) => releaseJoystick(event.pointerId));
 
+quakeModeToggle?.addEventListener('change', () => {
+    applyQuakeModePreference(quakeModeToggle.checked);
+});
+
 applyMobileControlMode(currentMobileControlMode, { resize: false });
+applyQuakeModePreference(quakeModeEnabled, { persist: false });
