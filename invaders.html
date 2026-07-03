@@ -173,7 +173,7 @@
     <div id="overlay" class="overlay-screen">
         <div id="startScreen" class="menu-content">
             <h1 class="game-title">SPACE<br><span>INVADERS</span></h1>
-            <p class="game-subtitle" data-touch-text="Arrancá tranquilo, elegí nivel y nickname, y preparate: la próxima oleada SIEMPRE avisa antes de largar. En touch usá el pad y el botón FUEGO." data-desktop-text="Arrancá tranquilo, elegí nivel y nickname, y preparate: la próxima oleada SIEMPRE avisa antes de largar.">Arrancá tranquilo, elegí nivel y nickname, y preparate: la próxima oleada SIEMPRE avisa antes de largar.</p>
+            <p class="game-subtitle" data-touch-text="Arrancá tranquilo, elegí nivel y nickname, y preparate: la flota arranca con 1 nave, luego 2, y así. En touch usá el pad y el botón FUEGO; tus disparos no rompen los escudos propios." data-desktop-text="Arrancá tranquilo, elegí nivel y nickname, y preparate: la flota arranca con 1 nave, luego 2, y así.">Arrancá tranquilo, elegí nivel y nickname, y preparate: la flota arranca con 1 nave, luego 2, y así.</p>
             <div class="form-grid">
                 <div class="field">
                     <label for="nickInput">NICKNAME</label>
@@ -194,6 +194,7 @@
                 <div class="control-row" data-device-show="touch"><span>Táctil:</span><span class="control-key">PAD + FUEGO</span></div>
                 <div class="control-row"><span>Pausa:</span><span class="control-key">ESC o botón II</span></div>
                 <div class="control-row"><span>Inicio:</span><span class="control-key" data-touch-text="TOCÁ START" data-desktop-text="ESPACIO o START">Botón START</span></div>
+                <div class="top-note">Progresión: 1 nave, luego 2, 3… hasta limpiar la flota.</div>
             </div>
             <div data-install-slot></div>
             <div class="button-row">
@@ -279,6 +280,7 @@
         const pauseNick = document.getElementById('pauseNick');
 
         const STATES = { START: 'START', COUNTDOWN: 'COUNTDOWN', PLAYING: 'PLAYING', PAUSED: 'PAUSED', BETWEEN_WAVES: 'BETWEEN_WAVES', GAMEOVER: 'GAMEOVER' };
+        const MAX_LEVEL = 10;
         let currentState = STATES.START;
         let playerNick = 'PLAYER1';
         const uiHelper = window.BORED_UI;
@@ -298,8 +300,6 @@
         let shields = [];
         let particles = [];
         let keys = {};
-        let cols = 7;
-        let rows = 4;
         let alienDirection = 1;
         let alienSpeed = 1;
         let alienStepY = 18;
@@ -350,8 +350,6 @@
             const mobileReserve = window.innerWidth <= 768 ? 250 : 70;
             player.y = canvas.height - mobileReserve;
             player.x = Math.max(20, Math.min(canvas.width - player.w - 20, player.x || canvas.width / 2 - player.w / 2));
-            cols = Math.max(6, Math.min(11, Math.floor(canvas.width / 105)));
-            rows = Math.max(4, Math.min(6, Math.floor(canvas.height / 180)));
             updateDifficultyPreview();
             if (currentState === STATES.START) {
                 initAliens();
@@ -361,41 +359,40 @@
 
         function updateDifficultyPreview() {
             const previewLevel = Number(levelSelect.value || 1);
-            const baseSpeed = 0.6 + previewLevel * 0.16 + cols * 0.035;
+            const baseSpeed = 0.65 + previewLevel * 0.17;
             const shootRate = 0.0018 + previewLevel * 0.00055;
-            aliensPreview.textContent = `${cols * rows}`;
+            aliensPreview.textContent = `${previewLevel} nave${previewLevel === 1 ? '' : 's'}`;
             speedPreview.textContent = `${baseSpeed.toFixed(2)} px/f`;
             attackPreview.textContent = `${(shootRate * 1000).toFixed(1)}‰`;
         }
 
         function applyLevelSettings() {
             levelDisplay.textContent = level;
-            alienSpeed = 0.6 + level * 0.16 + cols * 0.035;
+            alienSpeed = 0.65 + level * 0.17;
             alienShootChance = Math.min(0.011, 0.0018 + level * 0.00055);
             player.shootCooldown = Math.max(180, 330 - level * 10);
-            statusDisplay.textContent = currentState === STATES.PLAYING ? `OLEADA ${level}` : bannerMessage;
+            statusDisplay.textContent = currentState === STATES.PLAYING ? `OLEADA ${level} · ${level} NAVE${level === 1 ? '' : 'S'}` : bannerMessage;
         }
 
         function initAliens() {
             aliens = [];
             alienDirection = 1;
-            const alienW = Math.max(28, Math.min(36, Math.floor(canvas.width / 28)));
-            const alienH = 20;
-            const spacingX = alienW + 18;
-            const totalWidth = cols * spacingX;
+            const fleetSize = Math.max(1, Math.min(MAX_LEVEL, level));
+            const alienW = Math.max(34, Math.min(44, Math.floor(canvas.width / 18)));
+            const alienH = 22;
+            const spacingX = alienW + 16;
+            const totalWidth = fleetSize * spacingX - 16;
             const startX = Math.max(20, (canvas.width - totalWidth) / 2);
-            const startY = 110;
-            const rowConfig = [
-                { color: '#ff007f', points: 45 },
-                { color: '#b026ff', points: 30 },
-                { color: '#00f0ff', points: 20 },
-                { color: '#39ff14', points: 10 }
+            const startY = 120;
+            const pattern = [
+                { color: '#ff007f', points: 80 },
+                { color: '#b026ff', points: 60 },
+                { color: '#00f0ff', points: 40 },
+                { color: '#39ff14', points: 25 }
             ];
-            for (let r = 0; r < rows; r++) {
-                const config = rowConfig[Math.min(r, rowConfig.length - 1)];
-                for (let c = 0; c < cols; c++) {
-                    aliens.push({ x: startX + c * spacingX, y: startY + r * 34, w: alienW, h: alienH, color: config.color, points: config.points, wobble: Math.random() * Math.PI * 2 });
-                }
+            for (let i = 0; i < fleetSize; i++) {
+                const config = pattern[Math.min(i, pattern.length - 1)];
+                aliens.push({ x: startX + i * spacingX, y: startY + (i % 2) * 10, w: alienW, h: alienH, color: config.color, points: config.points, wobble: Math.random() * Math.PI * 2 });
             }
         }
 
@@ -424,7 +421,10 @@
             nickInput.value = playerNick;
             if (!preserveLevel) {
                 level = Number(levelSelect.value || 1);
+            } else {
+                levelSelect.value = String(level);
             }
+            level = Math.max(1, Math.min(MAX_LEVEL, level));
             if (resetScore) {
                 score = 0;
                 lives = 3;
@@ -440,7 +440,7 @@
             initShields();
             currentState = STATES.COUNTDOWN;
             countdownUntil = performance.now() + 2200;
-            bannerMessage = `OLEADA ${level}`;
+            bannerMessage = `OLEADA ${level} · ${level} NAVE${level === 1 ? '' : 'S'}`;
             bannerUntil = countdownUntil;
             applyLevelSettings();
             hideOverlay();
@@ -481,6 +481,11 @@
             statusDisplay.textContent = bannerMessage;
             lasers = [];
             setTimeout(() => {
+                if (level >= MAX_LEVEL) {
+                    waveTransitionLock = false;
+                    finishGame(true);
+                    return;
+                }
                 level += 1;
                 waveTransitionLock = false;
                 startGame(false, true);
@@ -547,9 +552,13 @@
                 for (let j = shields.length - 1; j >= 0; j--) {
                     const sh = shields[j];
                     if (l.x >= sh.x && l.x <= sh.x + sh.w && l.y >= sh.y && l.y <= sh.y + sh.h) {
-                        sh.hp -= 1;
-                        spawnParticles(l.x, l.y, '#ffffff', 6);
-                        if (sh.hp <= 0) shields.splice(j, 1);
+                        if (l.vy > 0) {
+                            sh.hp -= 1;
+                            spawnParticles(l.x, l.y, '#ffffff', 6);
+                            if (sh.hp <= 0) shields.splice(j, 1);
+                        } else {
+                            spawnParticles(l.x, l.y, '#00f0ff', 4);
+                        }
                         lasers.splice(i, 1);
                         removed = true;
                         break;
