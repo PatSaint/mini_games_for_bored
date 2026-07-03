@@ -195,6 +195,7 @@
         const isTouchDevice = window.BORED_DEVICE?.isTouchDevice ?? (window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window);
         const uiHelper = window.BORED_UI;
         const audio = window.BORED_AUDIO;
+        const i18n = window.BORED_I18N;
 
         const STATES = { START: 'START', PLAYING: 'PLAYING', PAUSED: 'PAUSED', GAMEOVER: 'GAMEOVER' };
         let currentState = STATES.START;
@@ -239,7 +240,7 @@
         }
         function renderTop10(target, list = getTopScores()) {
             target.innerHTML = '';
-            if (!list.length) { target.innerHTML = '<div class="touch-help">Todavía no hay récords.</div>'; return; }
+            if (!list.length) { target.innerHTML = `<div class="touch-help">${i18n?.lang === 'en' ? 'No scores yet.' : 'Todavía no hay récords.'}</div>`; return; }
             list.forEach((entry, index) => {
                 const row = document.createElement('div');
                 row.className = 'score-row';
@@ -335,7 +336,7 @@
         function showPanel(panel) { overlay.classList.remove('hidden'); [startScreen, pauseScreen, gameOverScreen].forEach(node => node.classList.add('hidden')); panel.classList.remove('hidden'); }
 
         function startGame() {
-            const validatedNickname = uiHelper?.requireNickname(nickInput, { message: 'Ingresá tu nombre antes de sacar el primer punto.' }) ?? sanitizeNick(nickInput.value);
+            const validatedNickname = uiHelper?.requireNickname(nickInput, { message: i18n?.lang === 'en' ? 'Enter your name before scoring the first point.' : 'Ingresá tu nombre antes de sacar el primer punto.' }) ?? sanitizeNick(nickInput.value);
             if (!validatedNickname) return;
             playerNick = validatedNickname;
             nickInput.value = playerNick;
@@ -368,8 +369,8 @@
             const score = getPlayerPaddle().score * 100 + level * 10 + (playerWon ? 50 : 0);
             const list = saveTopScore('pong', playerNick, score);
             updateBestScore();
-            winnerText.textContent = playerWon ? '¡GANASTE!' : 'PERDISTE';
-            winnerSubtitle.textContent = playerWon ? 'Le ganaste a la CPU en modo retrato.' : 'La CPU te pasó por arriba esta vez.';
+            winnerText.textContent = playerWon ? (i18n?.lang === 'en' ? 'YOU WON!' : '¡GANASTE!') : (i18n?.lang === 'en' ? 'YOU LOST' : 'PERDISTE');
+            winnerSubtitle.textContent = playerWon ? (i18n?.lang === 'en' ? 'You beat the CPU in portrait mode.' : 'Le ganaste a la CPU en modo retrato.') : (i18n?.lang === 'en' ? 'The CPU got the better of you this time.' : 'La CPU te pasó por arriba esta vez.');
             finalPlayerScore.textContent = getPlayerPaddle().score;
             finalCpuScore.textContent = getCpuPaddle().score;
             renderTop10(topScores, list);
@@ -545,6 +546,9 @@
         document.getElementById('restartButton').addEventListener('click', startGame);
         document.getElementById('playAgainButton').addEventListener('click', startGame);
         document.getElementById('menuButton').addEventListener('click', () => { currentState = STATES.START; showPanel(startScreen); });
+        const applyLanguage = (lang = i18n?.lang || 'es') => { document.querySelector('.back-btn').textContent = lang === 'en' ? '◀ BACK' : '◀ VOLVER'; document.getElementById('startButton').textContent = lang === 'en' ? 'START' : 'START'; document.getElementById('resumeButton').textContent = lang === 'en' ? 'RESUME' : 'SEGUIR'; document.getElementById('restartButton').textContent = lang === 'en' ? 'RESTART' : 'REINICIAR'; document.getElementById('playAgainButton').textContent = lang === 'en' ? 'PLAY AGAIN' : 'JUGAR DE NUEVO'; document.getElementById('menuButton').textContent = lang === 'en' ? 'HOME MENU' : 'MENÚ INICIAL'; renderTop10(topScores); renderTop10(topScoresEnd); };
+        i18n?.onLanguageChange(applyLanguage);
+        applyLanguage();
 
         updateBestScore();
         renderTop10(topScores);

@@ -119,6 +119,7 @@
         const ctx = canvas.getContext('2d');
         const uiHelper = window.BORED_UI;
         const audio = window.BORED_AUDIO;
+        const i18n = window.BORED_I18N;
         const device = window.BORED_DEVICE || { isTouchDevice:false };
         const overlay = document.getElementById('overlay');
         const homeScreen = document.getElementById('homeScreen');
@@ -148,7 +149,7 @@
         function normalizeNick(value) { return uiHelper?.normalizeNickname(value) || ''; }
         function loadTop10() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
         function saveTop10(entry) { const scores = loadTop10(); scores.push(entry); scores.sort((a,b)=>b.score-a.score || b.level-a.level || a.time-b.time); const top = scores.slice(0,10); localStorage.setItem(STORAGE_KEY, JSON.stringify(top)); return top; }
-        function renderTop10() { const scores = loadTop10(); bestDisplay.textContent = scores[0]?.score || 0; leaderboard.innerHTML = scores.length ? scores.map((s,i)=>`<div class="board-row"><span>#${i+1} ${s.nick}</span><strong>${s.score}</strong><span>N${s.level}</span></div>`).join('') : '<div class="muted">Todavía no hay colonias legendarias.</div>'; }
+        function renderTop10() { const scores = loadTop10(); bestDisplay.textContent = scores[0]?.score || 0; leaderboard.innerHTML = scores.length ? scores.map((s,i)=>`<div class="board-row"><span>#${i+1} ${s.nick}</span><strong>${s.score}</strong><span>N${s.level}</span></div>`).join('') : `<div class="muted">${i18n?.lang === 'en' ? 'No legendary colonies yet.' : 'Todavía no hay colonias legendarias.'}</div>`; }
         function showScreen(screen) { overlay.classList.remove('hidden'); [homeScreen, pauseScreen, resultScreen].forEach(node => node.classList.add('hidden')); screen.classList.remove('hidden'); }
         function hideOverlay() { overlay.classList.add('hidden'); }
         function createBoard(size) { return Array.from({ length:size }, () => Array(size).fill(false)); }
@@ -176,7 +177,8 @@
             levelSelect.value = String(currentLevel.id);
             levelDisplay.textContent = currentLevel.id;
             goalDisplay.textContent = `${currentLevel.target} GEN`;
-            const preview = `<div class="stats-row"><span>Nombre</span><strong>${currentLevel.name}</strong></div><div class="stats-row"><span>Rejilla</span><strong>${currentLevel.size}×${currentLevel.size}</strong></div><div class="stats-row"><span>Objetivo</span><strong>${currentLevel.target} generaciones</strong></div><div class="stats-row"><span>Ediciones</span><strong>${currentLevel.edits}</strong></div><div class="stats-row"><span>Ritmo</span><strong>${currentLevel.speed} ms</strong></div>`;
+            const lang = i18n?.lang || 'es';
+            const preview = `<div class="stats-row"><span>${lang === 'en' ? 'Name' : 'Nombre'}</span><strong>${currentLevel.name}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Grid' : 'Rejilla'}</span><strong>${currentLevel.size}×${currentLevel.size}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Goal' : 'Objetivo'}</span><strong>${currentLevel.target} ${lang === 'en' ? 'generations' : 'generaciones'}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Edits' : 'Ediciones'}</span><strong>${currentLevel.edits}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Pace' : 'Ritmo'}</span><strong>${currentLevel.speed} ms</strong></div>`;
             levelPreview.innerHTML = preview;
             menuLevelPreview.innerHTML = preview;
         }
@@ -191,8 +193,9 @@
             generationDisplay.textContent = generations;
             liveCellsDisplay.textContent = getLiveCells();
             editBudgetDisplay.textContent = `${editsUsed}/${currentLevel.edits}`;
-            statusDisplay.textContent = state === STATES.PLAYING ? 'SIMULANDO' : state === STATES.PAUSED ? 'PAUSA' : state === STATES.RESULT ? 'RESULTADO' : 'EDITANDO';
-            runButton.textContent = state === STATES.PLAYING ? 'PAUSA' : 'SIMULAR';
+            const lang = i18n?.lang || 'es';
+            statusDisplay.textContent = state === STATES.PLAYING ? (lang === 'en' ? 'SIMULATING' : 'SIMULANDO') : state === STATES.PAUSED ? (lang === 'en' ? 'PAUSE' : 'PAUSA') : state === STATES.RESULT ? (lang === 'en' ? 'RESULT' : 'RESULTADO') : (lang === 'en' ? 'EDITING' : 'EDITANDO');
+            runButton.textContent = state === STATES.PLAYING ? (lang === 'en' ? 'PAUSE' : 'PAUSA') : (lang === 'en' ? 'SIMULATE' : 'SIMULAR');
         }
         function loadLevel(levelId, resetScore) {
             if (resetScore) sessionScore = 0;
@@ -208,7 +211,7 @@
             draw();
         }
         function startRun(levelId = currentLevel.id) {
-            const validNickname = uiHelper?.requireNickname(nickInput, { message:'Ingresá tu nombre antes de lanzar la colonia.' }) ?? normalizeNick(nickInput.value);
+            const validNickname = uiHelper?.requireNickname(nickInput, { message:i18n?.lang === 'en' ? 'Enter your name before launching the colony.' : 'Ingresá tu nombre antes de lanzar la colonia.' }) ?? normalizeNick(nickInput.value);
             if (!validNickname) return;
             nickname = validNickname;
             nickInput.value = nickname;
@@ -245,8 +248,9 @@
             const hasNext = currentLevel.id < LEVELS.length;
             nextLevelAfterResult = hasNext ? currentLevel.id + 1 : null;
             sessionScore += currentLevel.target * 25;
-            resultTitle.textContent = hasNext ? 'NIVEL LIMPIO' : 'RUN PERFECTA';
-            resultSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntos</span><strong>${sessionScore}</strong></div><div class="stats-row"><span>Nivel superado</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div><div class="stats-row"><span>Generaciones</span><strong>${generations}/${currentLevel.target}</strong></div>`;
+            const lang = i18n?.lang || 'es';
+            resultTitle.textContent = hasNext ? (lang === 'en' ? 'LEVEL CLEARED' : 'NIVEL LIMPIO') : (lang === 'en' ? 'PERFECT RUN' : 'RUN PERFECTA');
+            resultSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Score' : 'Puntos'}</span><strong>${sessionScore}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Level cleared' : 'Nivel superado'}</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Generations' : 'Generaciones'}</span><strong>${generations}/${currentLevel.target}</strong></div>`;
             continueButton.hidden = !hasNext;
             showScreen(resultScreen);
             updateHud();
@@ -261,8 +265,9 @@
             state = STATES.RESULT;
             audio?.play(victoryEnd ? 'lifeCompletion' : 'lifeExtinction');
             saveRunAndRefresh(currentLevel.id);
-            resultTitle.textContent = victoryEnd ? 'RUN PERFECTA' : 'COLONIA CAÍDA';
-            resultSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntos</span><strong>${sessionScore}</strong></div><div class="stats-row"><span>Último nivel</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div><div class="stats-row"><span>Generaciones</span><strong>${generations}/${currentLevel.target}</strong></div>`;
+            const lang = i18n?.lang || 'es';
+            resultTitle.textContent = victoryEnd ? (lang === 'en' ? 'PERFECT RUN' : 'RUN PERFECTA') : (lang === 'en' ? 'COLONY COLLAPSED' : 'COLONIA CAÍDA');
+            resultSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Score' : 'Puntos'}</span><strong>${sessionScore}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Last level' : 'Último nivel'}</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Generations' : 'Generaciones'}</span><strong>${generations}/${currentLevel.target}</strong></div>`;
             continueButton.hidden = true;
             showScreen(resultScreen);
             updateHud();
@@ -270,7 +275,8 @@
         function pauseGame() {
             if (state !== STATES.PLAYING && state !== STATES.READY) return;
             state = STATES.PAUSED;
-            pauseSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntos</span><strong>${sessionScore}</strong></div><div class="stats-row"><span>Nivel</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div><div class="stats-row"><span>Generaciones</span><strong>${generations}/${currentLevel.target}</strong></div><div class="stats-row"><span>Ediciones</span><strong>${editsUsed}/${currentLevel.edits}</strong></div>`;
+            const lang = i18n?.lang || 'es';
+            pauseSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Score' : 'Puntos'}</span><strong>${sessionScore}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Level' : 'Nivel'}</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Generations' : 'Generaciones'}</span><strong>${generations}/${currentLevel.target}</strong></div><div class="stats-row"><span>${lang === 'en' ? 'Edits' : 'Ediciones'}</span><strong>${editsUsed}/${currentLevel.edits}</strong></div>`;
             showScreen(pauseScreen);
             updateHud();
         }
@@ -341,6 +347,7 @@
         nickname = 'JUGADOR';
         nickInput.value = nickname;
         hudNick.textContent = nickname;
+        function applyLanguage(lang = i18n?.lang || 'es'){ document.querySelector('.back-btn').textContent = lang === 'en' ? '◀ BACK' : '◀ VOLVER'; document.getElementById('runButton').textContent = lang === 'en' ? 'SIMULATE' : 'SIMULAR'; document.querySelector('#homeScreen .game-subtitle').textContent = lang === 'en' ? '2048 is gone. Now you get Conway explained properly: place cells, launch the simulation, and try to keep the colony alive until the level goal.' : '2048 salió. Ahora tenés Conway bien explicado: editás el patrón, largás la simulación y sostenés la colonia hasta cumplir el objetivo del nivel.'; document.getElementById('startButton').textContent = lang === 'en' ? 'START COLONY' : 'INICIAR COLONIA'; document.querySelector('#pauseScreen .game-title').textContent = lang === 'en' ? 'PAUSE' : 'PAUSA'; document.getElementById('resumeButton').textContent = lang === 'en' ? 'RESUME' : 'REANUDAR'; document.getElementById('restartButton').textContent = lang === 'en' ? 'RESTART RUN' : 'REINICIAR RUN'; document.getElementById('homeButton').textContent = lang === 'en' ? 'HOME MENU' : 'MENÚ INICIAL'; document.getElementById('continueButton').textContent = lang === 'en' ? 'NEXT LEVEL' : 'SIGUIENTE NIVEL'; document.getElementById('playAgainButton').textContent = lang === 'en' ? 'NEW RUN' : 'NUEVA RUN'; document.getElementById('resultHomeButton').textContent = lang === 'en' ? 'HOME MENU' : 'MENÚ INICIAL'; document.querySelector('.touch-hint').dataset.touchText = lang === 'en' ? 'Tap cells to edit · SIMULATE runs the colony · PAUSE opens the menu' : 'Tocá células para editar · SIMULAR corre la colonia · PAUSA abre menú'; document.querySelector('.touch-hint').dataset.desktopText = lang === 'en' ? 'Click to edit · SPACE simulates/pauses · ESC opens the menu' : 'Click para editar · ESPACIO simula/pausa · ESC abre menú'; window.BORED_UI?.applyAdaptiveContent?.(); setLevel(currentLevel.id); updateHud(); renderTop10(); }
         setLevel(1);
         board = createBoard(currentLevel.size);
         applySeed(currentLevel.seed);

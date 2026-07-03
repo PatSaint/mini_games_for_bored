@@ -674,6 +674,7 @@
         let currentNickname = 'PLAYER';
         const uiHelper = window.BORED_UI;
         const audio = window.BORED_AUDIO;
+        const i18n = window.BORED_I18N;
 
         let ship = { x: 0, y: 0, r: 12, angle: -Math.PI / 2, vx: 0, vy: 0, friction: 0.985, thrustPower: 0.16, rotateSpeed: 0.07, lastShot: 0, cooldown: 250 };
         let lasers = []; // {x, y, vx, vy, life}
@@ -722,7 +723,7 @@
                         <span class="leaderboard-score">${entry.score}</span>
                     </div>
                 `).join('')
-                : '<div class="leaderboard-empty">Todavía no hay partidas guardadas.</div>';
+                : `<div class="leaderboard-empty">${i18n?.lang === 'en' ? 'No saved runs yet.' : 'Todavía no hay partidas guardadas.'}</div>`;
 
             [leaderboardStart, leaderboardPause, leaderboardEnd].forEach((target) => {
                 if (target) target.innerHTML = markup;
@@ -891,7 +892,7 @@
         pauseRestartButton.addEventListener('click', startGame);
 
         function startGame() {
-            const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: 'Ingresá tu nombre antes de despegar.' }) ?? sanitizeNickname(nicknameInput.value);
+            const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: i18n?.lang === 'en' ? 'Enter your name before takeoff.' : 'Ingresá tu nombre antes de despegar.' }) ?? sanitizeNickname(nicknameInput.value);
             if (!validatedNickname) {
                 return;
             }
@@ -965,7 +966,7 @@
             showMenu(endScreen);
 
             if (won) {
-                endTitle.textContent = "¡CINTURÓN LIMPIO!";
+                endTitle.textContent = i18n?.lang === 'en' ? 'BELT CLEARED!' : '¡CINTURÓN LIMPIO!';
                 endTitle.className = "game-title";
                 endTitle.style.color = '#00f0ff';
                 endTitle.style.textShadow = '0 0 10px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.3)';
@@ -974,7 +975,7 @@
                     setTimeout(() => spawnSparks(Math.random() * canvas.width, Math.random() * canvas.height, '#00f0ff', 20), i * 150);
                 }
             } else {
-                endTitle.textContent = "FIN DEL JUEGO";
+                endTitle.textContent = i18n?.lang === 'en' ? 'GAME OVER' : 'FIN DEL JUEGO';
                 endTitle.className = "game-title";
                 endTitle.style.color = '#ff007f';
                 endTitle.style.textShadow = '0 0 10px rgba(255, 0, 127, 0.6), 0 0 20px rgba(255, 0, 127, 0.3)';
@@ -1213,6 +1214,22 @@
             draw();
             requestAnimationFrame(gameLoop);
         }
+
+        function applyLanguage(lang = i18n?.lang || 'es') {
+            document.querySelector('.back-btn').textContent = lang === 'en' ? '◀ BACK' : '◀ VOLVER';
+            document.getElementById('btnThrust').textContent = lang === 'en' ? 'THRUST' : 'EMPUJE';
+            document.getElementById('btnPause').textContent = lang === 'en' ? 'PAUSE' : 'PAUSA';
+            document.querySelector('#startScreen .game-subtitle').textContent = lang === 'en' ? 'Enter your nick, choose the starting level, and clear the belt. ESC pauses, and on touch use rotate, thrust, fire, and pause.' : 'Ingresá tu nick, elegí el nivel inicial y limpiá el cinturón. ESC pausa y en táctil usá giro, empuje, fuego y pausa.';
+            document.getElementById('startButton').textContent = lang === 'en' ? 'START FLIGHT' : 'INICIAR VUELO';
+            document.querySelector('#pauseScreen .game-subtitle').textContent = lang === 'en' ? 'The ship is holding position. Resume with ESC or choose another destination.' : 'La nave quedó en espera. Reanudá con ESC o elegí otro destino.';
+            document.getElementById('resumeButton').textContent = lang === 'en' ? 'RESUME' : 'REANUDAR';
+            document.getElementById('pauseRestartButton').textContent = lang === 'en' ? 'RESTART' : 'REINICIAR';
+            document.getElementById('restartButton').textContent = lang === 'en' ? 'PLAY AGAIN' : 'JUGAR DE NUEVO';
+            renderTopScores();
+        }
+
+        i18n?.onLanguageChange(applyLanguage);
+        applyLanguage();
 
         updateLevelSettings();
         resizeGame();

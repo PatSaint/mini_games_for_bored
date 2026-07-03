@@ -285,6 +285,7 @@
         let playerNick = 'PLAYER1';
         const uiHelper = window.BORED_UI;
         const audio = window.BORED_AUDIO;
+        const i18n = window.BORED_I18N;
         let score = 0;
         let lives = 3;
         let level = 1;
@@ -327,7 +328,7 @@
             if (!target) return;
             target.innerHTML = '';
             if (!list.length) {
-                target.innerHTML = '<div class="top-note">Todavía no hay récords. Meté el primero.</div>';
+                target.innerHTML = `<div class="top-note">${i18n?.lang === 'en' ? 'No high scores yet. Be the first.' : 'Todavía no hay récords. Meté el primero.'}</div>`;
                 return;
             }
             list.forEach((entry, index) => {
@@ -415,7 +416,7 @@
         function hideOverlay() { overlay.classList.add('hidden'); }
 
         function startGame(resetScore = true, preserveLevel = false) {
-            const validatedNickname = uiHelper?.requireNickname(nickInput, { message: 'Ingresá tu nombre antes de defender la galaxia.' }) ?? sanitizeNick(nickInput.value);
+            const validatedNickname = uiHelper?.requireNickname(nickInput, { message: i18n?.lang === 'en' ? 'Enter your name before defending the galaxy.' : 'Ingresá tu nombre antes de defender la galaxia.' }) ?? sanitizeNick(nickInput.value);
             if (!validatedNickname) return;
             playerNick = validatedNickname;
             nickInput.value = playerNick;
@@ -498,8 +499,8 @@
             audio?.play(won ? 'invadersWaveClear' : 'invadersGameOver');
             const saved = saveTopScore('invaders', playerNick, score);
             updateHighScore();
-            gameOverTitle.textContent = won ? '¡VICTORIA TOTAL!' : 'FIN DEL JUEGO';
-            resultMessage.textContent = won ? 'Borraste la flota completa. LOCURA CÓSMICA.' : 'La invasión te alcanzó, pero ya quedó registrado el score.';
+            gameOverTitle.textContent = won ? (i18n?.lang === 'en' ? 'TOTAL VICTORY!' : '¡VICTORIA TOTAL!') : (i18n?.lang === 'en' ? 'GAME OVER' : 'FIN DEL JUEGO');
+            resultMessage.textContent = won ? (i18n?.lang === 'en' ? 'You wiped out the full fleet. COSMIC MADNESS.' : 'Borraste la flota completa. LOCURA CÓSMICA.') : (i18n?.lang === 'en' ? 'The invasion got you, but the score is saved.' : 'La invasión te alcanzó, pero ya quedó registrado el score.');
             finalScore.textContent = score;
             finalHighScore.textContent = highScore;
             finalWave.textContent = level;
@@ -710,6 +711,23 @@
             renderTop10(topScores);
             showPanel(startScreen);
         });
+
+        const applyLanguage = (lang = i18n?.lang || 'es') => {
+            document.querySelector('.back-btn').textContent = lang === 'en' ? '◀ BACK' : '◀ VOLVER';
+            document.getElementById('btnShoot').textContent = lang === 'en' ? 'FIRE' : 'FUEGO';
+            document.getElementById('resumeButton').textContent = lang === 'en' ? 'RESUME' : 'SEGUIR';
+            document.getElementById('restartButton').textContent = lang === 'en' ? 'RESTART' : 'REINICIAR';
+            document.getElementById('playAgainButton').textContent = lang === 'en' ? 'PLAY AGAIN' : 'JUGAR DE NUEVO';
+            document.getElementById('backToMenuButton').textContent = lang === 'en' ? 'HOME MENU' : 'MENÚ INICIAL';
+            if (currentState === STATES.START) {
+                bannerMessage = lang === 'en' ? 'READY' : 'LISTO';
+                statusDisplay.textContent = bannerMessage;
+            }
+            renderTop10(topScores);
+            renderTop10(topScoresEnd);
+        };
+        i18n?.onLanguageChange(applyLanguage);
+        applyLanguage();
 
         updateHighScore();
         renderTop10(topScores);

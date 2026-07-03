@@ -514,6 +514,7 @@
         let currentNickname = 'PLAYER';
         const uiHelper = window.BORED_UI;
         const audio = window.BORED_AUDIO;
+        const i18n = window.BORED_I18N;
         let scheduledTimeouts = [];
 
         let diskSize = 360;
@@ -569,7 +570,7 @@
                         <span class="leaderboard-score">${entry.score}</span>
                     </div>
                 `).join('')
-                : '<div class="leaderboard-empty">Todavía no hay partidas guardadas.</div>';
+                : `<div class="leaderboard-empty">${i18n?.lang === 'en' ? 'No saved runs yet.' : 'Todavía no hay partidas guardadas.'}</div>`;
             [leaderboardStart, leaderboardPause, leaderboardEnd].forEach((target) => {
                 if (target) target.innerHTML = markup;
             });
@@ -708,7 +709,7 @@
 
         function startGame() {
             clearScheduled();
-            const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: 'Ingresá tu nombre antes de arrancar Simon.' }) ?? sanitizeNickname(nicknameInput.value);
+            const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: i18n?.lang === 'en' ? 'Enter your name before starting Simon.' : 'Ingresá tu nombre antes de arrancar Simon.' }) ?? sanitizeNickname(nicknameInput.value);
             if (!validatedNickname) {
                 return;
             }
@@ -721,7 +722,7 @@
 
             currentState = STATES.CPU;
             overlay.classList.add('hidden');
-            statusText.textContent = "Presta Atención";
+            statusText.textContent = i18n?.lang === 'en' ? 'Watch Closely' : 'Presta Atención';
             statusText.style.color = 'rgba(255, 255, 255, 0.4)';
             audio?.play('gameStart');
 
@@ -745,7 +746,7 @@
         function playSequence() {
             clearScheduled();
             currentState = STATES.CPU;
-            statusText.textContent = "Presta Atención";
+            statusText.textContent = i18n?.lang === 'en' ? 'Watch Closely' : 'Presta Atención';
             statusText.style.color = 'rgba(255, 255, 255, 0.4)';
 
             let idx = 0;
@@ -780,7 +781,7 @@
         function startUserTurn() {
             currentState = STATES.USER;
             userSequenceIndex = 0;
-            statusText.textContent = "Tu Turno";
+            statusText.textContent = i18n?.lang === 'en' ? 'Your Turn' : 'Tu Turno';
             statusText.style.color = varColor('--neon-cyan');
         }
 
@@ -794,7 +795,7 @@
                 // ¿Completó la secuencia de la ronda?
                 if (userSequenceIndex === sequence.length) {
                     currentState = STATES.CPU;
-                    statusText.textContent = "¡Bien!";
+                    statusText.textContent = i18n?.lang === 'en' ? 'Nice!' : '¡Bien!';
                     statusText.style.color = '#39ff14';
                     audio?.play('simonSuccess');
                     schedule(nextRound, 1000);
@@ -816,7 +817,7 @@
 
         function resumeGame() {
             overlay.classList.add('hidden');
-            statusText.textContent = 'Repitiendo Secuencia';
+            statusText.textContent = i18n?.lang === 'en' ? 'Repeating Sequence' : 'Repitiendo Secuencia';
             statusText.style.color = varColor('--neon-cyan');
             schedule(playSequence, 300);
         }
@@ -824,7 +825,7 @@
         function triggerGameOver() {
             clearScheduled();
             currentState = STATES.GAMEOVER;
-            statusText.textContent = "Secuencia Incorrecta";
+            statusText.textContent = i18n?.lang === 'en' ? 'Wrong Sequence' : 'Secuencia Incorrecta';
             statusText.style.color = '#ff073a';
             audio?.play('simonFail');
 
@@ -933,7 +934,10 @@
 
         updateLevelSettings();
         resizeGame();
-        statusText.textContent = "Listo para Jugar";
+        statusText.textContent = i18n?.lang === 'en' ? 'Ready to Play' : 'Listo para Jugar';
+        const applyLanguage = (lang = i18n?.lang || 'es') => { document.querySelector('.back-btn').textContent = lang === 'en' ? '◀ BACK' : '◀ VOLVER'; document.getElementById('pauseButton').textContent = lang === 'en' ? 'PAUSE' : 'PAUSA'; document.getElementById('resumeButton').textContent = lang === 'en' ? 'RESUME' : 'REANUDAR'; document.getElementById('pauseRestartButton').textContent = lang === 'en' ? 'RESTART' : 'REINICIAR'; document.getElementById('restartButton').textContent = lang === 'en' ? 'PLAY AGAIN' : 'JUGAR DE NUEVO'; renderTopScores(); };
+        i18n?.onLanguageChange(applyLanguage);
+        applyLanguage();
         gameLoop();
     </script>
 </body>

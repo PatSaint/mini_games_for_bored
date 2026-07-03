@@ -206,6 +206,7 @@
         let playerNick = 'PLAYER1';
         const uiHelper = window.BORED_UI;
         const audio = window.BORED_AUDIO;
+        const i18n = window.BORED_I18N;
         let selectedLevel = 1;
         let cols = 10, rows = 10, mineCount = 15, cellSize = 34;
         let grid = [];
@@ -229,7 +230,7 @@
         }
         function renderTop10(target, list = getTopScores()) {
             target.innerHTML = '';
-            if (!list.length) { target.innerHTML = '<div class="top-note">Todavía no hay récords.</div>'; return; }
+            if (!list.length) { target.innerHTML = `<div class="top-note">${i18n?.lang === 'en' ? 'No high scores yet.' : 'Todavía no hay récords.'}</div>`; return; }
             list.forEach((entry, index) => {
                 const row = document.createElement('div');
                 row.className = 'score-row';
@@ -293,12 +294,12 @@
         }
 
         function startGame() {
-            const validatedNickname = uiHelper?.requireNickname(nickInput, { message: 'Ingresá tu nombre antes de abrir el tablero.' }) ?? sanitizeNick(nickInput.value);
+            const validatedNickname = uiHelper?.requireNickname(nickInput, { message: i18n?.lang === 'en' ? 'Enter your name before opening the board.' : 'Ingresá tu nombre antes de abrir el tablero.' }) ?? sanitizeNick(nickInput.value);
             if (!validatedNickname) return;
             playerNick = validatedNickname;
             nickInput.value = playerNick;
             currentState = STATES.PLAYING;
-            stateDisplay.textContent = 'JUGANDO';
+            stateDisplay.textContent = i18n?.lang === 'en' ? 'PLAYING' : 'JUGANDO';
             pauseNick.textContent = playerNick;
             resizeGrid();
             initGrid();
@@ -309,11 +310,11 @@
         function pauseGame() {
             if (currentState !== STATES.PLAYING) return;
             currentState = STATES.PAUSED;
-            stateDisplay.textContent = 'PAUSA';
+            stateDisplay.textContent = i18n?.lang === 'en' ? 'PAUSE' : 'PAUSA';
             pauseFlags.textContent = flagCount;
             showPanel(pauseScreen);
         }
-        function resumeGame() { if (currentState !== STATES.PAUSED) return; currentState = STATES.PLAYING; stateDisplay.textContent = 'JUGANDO'; overlay.classList.add('hidden'); }
+        function resumeGame() { if (currentState !== STATES.PAUSED) return; currentState = STATES.PLAYING; stateDisplay.textContent = i18n?.lang === 'en' ? 'PLAYING' : 'JUGANDO'; overlay.classList.add('hidden'); }
 
         function toggleFlag(r, c) {
             const cell = grid[r][c];
@@ -353,14 +354,14 @@
         function triggerGameOver(won, boomRow = 0, boomCol = 0) {
             currentState = won ? STATES.WON : STATES.GAMEOVER;
             audio?.play(won ? 'minesWin' : 'minesExplosion');
-            stateDisplay.textContent = won ? 'GANASTE' : 'PERDISTE';
+            stateDisplay.textContent = won ? (i18n?.lang === 'en' ? 'YOU WON' : 'GANASTE') : (i18n?.lang === 'en' ? 'YOU LOST' : 'PERDISTE');
             for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (grid[r][c].mine) grid[r][c].revealed = true;
             if (!won) spawnSparks(boomCol * cellSize + cellSize / 2, boomRow * cellSize + cellSize / 2, '#ff073a', 32);
             const score = computeScore(won);
             const list = saveTopScore('minesweeper', playerNick, score);
             updateBestScore();
-            endTitle.textContent = won ? '¡VICTORIA!' : 'FIN DEL JUEGO';
-            endSubtitle.textContent = won ? 'Limpiaste el tablero completo, capo.' : 'Pisaste una mina, pero el juego ya NO está roto.';
+            endTitle.textContent = won ? (i18n?.lang === 'en' ? 'VICTORY!' : '¡VICTORIA!') : (i18n?.lang === 'en' ? 'GAME OVER' : 'FIN DEL JUEGO');
+            endSubtitle.textContent = won ? (i18n?.lang === 'en' ? 'You cleared the whole board.' : 'Limpiaste el tablero completo, capo.') : (i18n?.lang === 'en' ? 'You stepped on a mine, but the game is no longer broken.' : 'Pisaste una mina, pero el juego ya NO está roto.');
             finalScore.textContent = `${score}`;
             finalLevel.textContent = `${selectedLevel}`;
             renderTop10(topScores, list);
@@ -468,7 +469,10 @@
         document.getElementById('resumeButton').addEventListener('click', resumeGame);
         document.getElementById('restartButton').addEventListener('click', startGame);
         document.getElementById('playAgainButton').addEventListener('click', startGame);
-        document.getElementById('menuButton').addEventListener('click', () => { currentState = STATES.START; stateDisplay.textContent = 'LISTO'; showPanel(startScreen); });
+        document.getElementById('menuButton').addEventListener('click', () => { currentState = STATES.START; stateDisplay.textContent = i18n?.lang === 'en' ? 'READY' : 'LISTO'; showPanel(startScreen); });
+        const applyLanguage = (lang = i18n?.lang || 'es') => { document.querySelector('.back-btn').textContent = lang === 'en' ? '◀ BACK' : '◀ VOLVER'; document.getElementById('btnReveal').textContent = lang === 'en' ? 'REVEAL' : 'REVELAR'; document.getElementById('btnFlag').textContent = lang === 'en' ? 'FLAG' : 'BANDERA'; document.getElementById('btnPause').textContent = lang === 'en' ? 'PAUSE' : 'PAUSA'; document.getElementById('resumeButton').textContent = lang === 'en' ? 'RESUME' : 'SEGUIR'; document.getElementById('restartButton').textContent = lang === 'en' ? 'RESTART' : 'REINICIAR'; document.getElementById('playAgainButton').textContent = lang === 'en' ? 'PLAY AGAIN' : 'JUGAR DE NUEVO'; document.getElementById('menuButton').textContent = lang === 'en' ? 'HOME MENU' : 'MENÚ INICIAL'; if (currentState === STATES.START) stateDisplay.textContent = lang === 'en' ? 'READY' : 'LISTO'; renderTop10(topScores); renderTop10(topScoresEnd); };
+        i18n?.onLanguageChange(applyLanguage);
+        applyLanguage();
 
         updateBestScore();
         renderTop10(topScores);

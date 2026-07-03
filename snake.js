@@ -97,6 +97,42 @@ let highScore = topScores[0]?.score || 0;
 let currentNickname = 'PLAYER';
 const uiHelper = window.BORED_UI;
 const audio = window.BORED_AUDIO;
+const i18n = window.BORED_I18N;
+
+const COPY = {
+    es: {
+        common: {
+            back: '◀ VOLVER', backToMenu: 'VOLVER AL MENÚ', goHome: 'IR AL HOME', score: 'PUNTOS', highScore: 'RÉCORD', level: 'NIVEL',
+            nicknameMax: 'NICKNAME (MAX 10)', player: 'PLAYER', startLevel: 'NIVEL INICIAL', dimension: 'Dimensión:', top10Neon: 'TOP 10 NEON',
+            gameOver: 'FIN DEL JUEGO', finalScore: 'Puntaje Final', bestScore: 'Mejor Puntaje', bestRuns: 'MEJORES PARTIDAS', playAgain: 'JUGAR DE NUEVO',
+            pause: 'PAUSA', top10: 'TOP 10', resume: 'REANUDAR', restartMatch: 'REINICIAR PARTIDA', windowChanged: 'VENTANA MODIFICADA', resumeGame: 'REANUDAR JUEGO'
+        },
+        snake: {
+            meta: { title: 'Neon Snake | Juego Retro-Moderno' },
+            length: 'LARGO', selectedLevel: 'Nivel seleccionado:', multiplier: 'Multiplicador:', mobileControls: 'CONTROL MÓVIL',
+            mobileControlsCopy: 'Elegí cómo querés jugar en táctil. Se guarda automáticamente y en desktop seguís usando teclado.',
+            buttons: 'BOTONES', resizeCopy: 'La rejilla y el nivel han sido adaptados al nuevo tamaño.', newDimension: 'Nueva dimensión:', newLevel: 'Nuevo nivel:', swipeGrid: 'DESLIZÁ SOBRE LA GRILLA',
+            emptyScores: 'Todavía no hay partidas guardadas.', levelShort: 'Nv', nicknameRequired: 'Ingresá tu nombre antes de arrancar Snake.'
+        }
+    },
+    en: {
+        common: {
+            back: '◀ BACK', backToMenu: 'BACK TO MENU', goHome: 'GO HOME', score: 'SCORE', highScore: 'HIGH SCORE', level: 'LEVEL',
+            nicknameMax: 'NICKNAME (MAX 10)', player: 'PLAYER', startLevel: 'START LEVEL', dimension: 'Size:', top10Neon: 'NEON TOP 10',
+            gameOver: 'GAME OVER', finalScore: 'Final Score', bestScore: 'Best Score', bestRuns: 'BEST RUNS', playAgain: 'PLAY AGAIN',
+            pause: 'PAUSE', top10: 'TOP 10', resume: 'RESUME', restartMatch: 'RESTART MATCH', windowChanged: 'WINDOW CHANGED', resumeGame: 'RESUME GAME'
+        },
+        snake: {
+            meta: { title: 'Neon Snake | Retro-Modern Game' },
+            length: 'LENGTH', selectedLevel: 'Selected level:', multiplier: 'Multiplier:', mobileControls: 'MOBILE CONTROLS',
+            mobileControlsCopy: 'Choose how you want to play on touch. It saves automatically, and desktop still uses keyboard controls.',
+            buttons: 'BUTTONS', resizeCopy: 'The grid and level were adapted to the new size.', newDimension: 'New size:', newLevel: 'New level:', swipeGrid: 'SWIPE ON THE GRID',
+            emptyScores: 'No saved runs yet.', levelShort: 'Lv', nicknameRequired: 'Enter your name before starting Snake.'
+        }
+    }
+};
+
+i18n?.registerTranslations('snake', COPY, applyLanguage);
 
 // Variables de Control del Bucle de Juego
 let lastTickTime = 0;
@@ -162,15 +198,16 @@ function saveTopScore() {
 }
 
 function renderTopScores() {
+    const levelShort = i18n?.t('snake.levelShort') || 'Nv';
     const markup = topScores.length
         ? topScores.map((entry, index) => `
             <div class="leaderboard-row">
                 <span class="leaderboard-rank">#${index + 1}</span>
-                <span class="leaderboard-name">${entry.nick} · Nv ${entry.level}</span>
+                <span class="leaderboard-name">${entry.nick} · ${levelShort} ${entry.level}</span>
                 <span class="leaderboard-score">${entry.score}</span>
             </div>
         `).join('')
-        : '<div class="leaderboard-empty">Todavía no hay partidas guardadas.</div>';
+        : `<div class="leaderboard-empty">${i18n?.t('snake.emptyScores') || 'Todavía no hay partidas guardadas.'}</div>`;
 
     [leaderboardStart, leaderboardPause, leaderboardGameOver].forEach((target) => {
         if (target) target.innerHTML = markup;
@@ -244,24 +281,25 @@ window.addEventListener('resize', () => {
 
 function getControlModeCopy(mode) {
     const activeMode = normalizeControlMode(mode);
+    const lang = i18n?.lang || 'es';
     return {
         [CONTROL_MODES.SWIPE]: {
             guideKey: 'SWIPE',
-            guidePrimaryTouch: 'Deslizá sobre la grilla para cambiar de dirección',
-            guideSecondaryTouch: 'Pausa táctica abajo • podés cambiar el modo desde este menú',
-            hintTouch: 'SWIPE EN GRILLA • BOTÓN PAUSA'
+            guidePrimaryTouch: lang === 'en' ? 'Swipe on the grid to change direction' : 'Deslizá sobre la grilla para cambiar de dirección',
+            guideSecondaryTouch: lang === 'en' ? 'Pause button below • you can change the mode from this menu' : 'Pausa táctica abajo • podés cambiar el modo desde este menú',
+            hintTouch: lang === 'en' ? 'SWIPE ON GRID • PAUSE BUTTON' : 'SWIPE EN GRILLA • BOTÓN PAUSA'
         },
         [CONTROL_MODES.JOYSTICK]: {
             guideKey: 'JOYSTICK',
-            guidePrimaryTouch: 'Arrastrá el stick virtual y la serpiente resuelve a 4 direcciones',
-            guideSecondaryTouch: 'Soltá para recentrar • cambiá el modo cuando quieras',
-            hintTouch: 'JOYSTICK + PAUSA'
+            guidePrimaryTouch: lang === 'en' ? 'Drag the virtual stick and the snake resolves to 4 directions' : 'Arrastrá el stick virtual y la serpiente resuelve a 4 direcciones',
+            guideSecondaryTouch: lang === 'en' ? 'Release to recenter • switch modes whenever you want' : 'Soltá para recentrar • cambiá el modo cuando quieras',
+            hintTouch: lang === 'en' ? 'JOYSTICK + PAUSE' : 'JOYSTICK + PAUSA'
         },
         [CONTROL_MODES.BUTTONS]: {
-            guideKey: 'BOTONES',
-            guidePrimaryTouch: 'Usá la cruceta táctil clásica para moverte',
-            guideSecondaryTouch: 'Cada toque marca la próxima dirección válida',
-            hintTouch: 'CRUCETA + PAUSA'
+            guideKey: lang === 'en' ? 'BUTTONS' : 'BOTONES',
+            guidePrimaryTouch: lang === 'en' ? 'Use the classic touch d-pad to move' : 'Usá la cruceta táctil clásica para moverte',
+            guideSecondaryTouch: lang === 'en' ? 'Each tap sets the next valid direction' : 'Cada toque marca la próxima dirección válida',
+            hintTouch: lang === 'en' ? 'D-PAD + PAUSE' : 'CRUCETA + PAUSA'
         }
     }[activeMode];
 }
@@ -274,16 +312,49 @@ function updateControlModeCopy(mode = currentMobileControlMode) {
         controlGuideKey.textContent = isTouchDevice ? copy.guideKey : '▲ ▼ ◄ ►';
     }
     if (controlGuidePrimary) {
-        controlGuidePrimary.textContent = isTouchDevice ? copy.guidePrimaryTouch : 'o W A S D para moverte';
+        controlGuidePrimary.textContent = isTouchDevice ? copy.guidePrimaryTouch : (i18n?.lang === 'en' ? 'or W A S D to move' : 'o W A S D para moverte');
     }
     if (controlGuideSecondary) {
         controlGuideSecondary.textContent = isTouchDevice
             ? copy.guideSecondaryTouch
-            : 'ESC pausa • en móvil elegís swipe, joystick o botones';
+            : (i18n?.lang === 'en' ? 'ESC pauses • on mobile you can choose swipe, joystick, or buttons' : 'ESC pausa • en móvil elegís swipe, joystick o botones');
     }
     if (mobileHint) {
-        mobileHint.textContent = isTouchDevice ? copy.hintTouch : 'ESC PAUSA • TECLAS FLECHA / WASD';
+        mobileHint.textContent = isTouchDevice ? copy.hintTouch : (i18n?.lang === 'en' ? 'ESC PAUSE • ARROW KEYS / WASD' : 'ESC PAUSA • TECLAS FLECHA / WASD');
     }
+}
+
+function applyLanguage(lang = i18n?.lang || 'es') {
+    const subtitle = document.querySelector('#startScreen .game-subtitle');
+    const restartPrompt = document.querySelector('.restart-prompt');
+    const pauseInstruction = document.querySelector('.pause-instruction');
+    if (subtitle) {
+        if (lang === 'en') {
+            subtitle.dataset.touchText = 'Enter your nick, choose the starting level, pick your mobile controls, and own the neon grid. Tap START and use PAUSE whenever you need it.';
+            subtitle.dataset.desktopText = 'Enter your nick, choose the starting level, and own the neon grid. ESC pauses, and on mobile you can choose swipe, joystick, or buttons.';
+        } else {
+            subtitle.dataset.touchText = 'Ingresá tu nick, elegí el nivel inicial, definí tu control móvil y dominá la grilla neón. Tocá INICIAR y usá PAUSA cuando haga falta.';
+            subtitle.dataset.desktopText = 'Ingresá tu nick, elegí el nivel inicial y dominá la grilla neón. ESC pausa la partida y en móvil podés elegir swipe, joystick o botones.';
+        }
+    }
+    if (restartPrompt) {
+        restartPrompt.dataset.touchHtml = lang === 'en'
+            ? "Tap <span class='highlight-key'>PLAY AGAIN</span> to try again"
+            : "Tocá <span class='highlight-key'>JUGAR DE NUEVO</span> para volver a intentar";
+        restartPrompt.dataset.desktopHtml = lang === 'en'
+            ? "Press <span class='highlight-key'>SPACE</span> to try again"
+            : "Presioná <span class='highlight-key'>ESPACIO</span> para volver a intentar";
+    }
+    if (pauseInstruction) {
+        pauseInstruction.dataset.touchHtml = lang === 'en'
+            ? "Tap <span class='highlight-key'>RESUME</span> or choose your next move."
+            : "Tocá <span class='highlight-key'>REANUDAR</span> o elegí tu próximo movimiento.";
+        pauseInstruction.dataset.desktopHtml = lang === 'en'
+            ? "Press <span class='highlight-key'>ESC</span> to continue or choose your next move."
+            : "Presioná <span class='highlight-key'>ESC</span> para continuar o elegí tu próximo movimiento.";
+    }
+    window.BORED_UI?.applyAdaptiveContent?.();
+    updateControlModeCopy(currentMobileControlMode);
 }
 
 function syncControlModeInputs(mode = currentMobileControlMode) {
@@ -402,7 +473,7 @@ controlModeInputs.forEach((input) => {
 // --- ACCIONES DEL JUEGO ---
 
 function startGame() {
-    const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: 'Ingresá tu nombre antes de arrancar Snake.' }) ?? sanitizeNickname(nicknameInput.value);
+    const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: i18n?.t('snake.nicknameRequired') || 'Ingresá tu nombre antes de arrancar Snake.' }) ?? sanitizeNickname(nicknameInput.value);
     if (!validatedNickname) {
         return;
     }

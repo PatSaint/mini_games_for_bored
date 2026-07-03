@@ -135,6 +135,38 @@ let dropInterval = 1000; // ms
 let currentNickname = 'PLAYER';
 const uiHelper = window.BORED_UI;
 const audio = window.BORED_AUDIO;
+const i18n = window.BORED_I18N;
+
+const COPY = {
+    es: {
+        common: {
+            score: 'PUNTOS', highScore: 'RÉCORD', level: 'NIVEL', controls: 'CONTROLES', nicknameMax: 'NICKNAME (MAX 10)', player: 'PLAYER',
+            startLevel: 'NIVEL INICIAL', startLevelLabel: 'Nivel inicial:', top10Neon: 'TOP 10 NEON', backToMenu: 'VOLVER AL MENÚ', gameOver: 'FIN DEL JUEGO',
+            finalScore: 'Puntaje Final', bestScore: 'Mejor Puntaje', bestRuns: 'MEJORES PARTIDAS', playAgain: 'JUGAR DE NUEVO', pause: 'PAUSA', top10: 'TOP 10',
+            resume: 'REANUDAR', restartMatch: 'REINICIAR PARTIDA', goHome: 'IR AL HOME', windowChanged: 'VENTANA MODIFICADA', resumeGame: 'REANUDAR JUEGO'
+        },
+        tetris: {
+            meta: { title: 'Neon Tetris | Juego Retro-Moderno' }, next: 'SIGUIENTE', lines: 'LÍNEAS', move: '◄ ► : Mover', rotate: '▲ / W : Rotar',
+            softDrop: '▼ / S : Caída suave', hardDrop: 'Espacio : Caída rápida', windowSize: 'Dimensión ventana:', baseDrop: 'Caída base:', resizeCopy: 'La rejilla y el nivel han sido adaptados al nuevo tamaño.',
+            newWindowSize: 'Nueva dimensión ventana:', newBaseLevel: 'Nuevo nivel base:', drop: 'CAÍDA', rotateOnly: 'ROTAR', emptyScores: 'Todavía no hay partidas guardadas.', levelShort: 'Nv', nicknameRequired: 'Ingresá tu nombre antes de arrancar Tetris.'
+        }
+    },
+    en: {
+        common: {
+            score: 'SCORE', highScore: 'HIGH SCORE', level: 'LEVEL', controls: 'CONTROLS', nicknameMax: 'NICKNAME (MAX 10)', player: 'PLAYER',
+            startLevel: 'START LEVEL', startLevelLabel: 'Start level:', top10Neon: 'NEON TOP 10', backToMenu: 'BACK TO MENU', gameOver: 'GAME OVER',
+            finalScore: 'Final Score', bestScore: 'Best Score', bestRuns: 'BEST RUNS', playAgain: 'PLAY AGAIN', pause: 'PAUSE', top10: 'TOP 10',
+            resume: 'RESUME', restartMatch: 'RESTART MATCH', goHome: 'GO HOME', windowChanged: 'WINDOW CHANGED', resumeGame: 'RESUME GAME'
+        },
+        tetris: {
+            meta: { title: 'Neon Tetris | Retro-Modern Game' }, next: 'NEXT', lines: 'LINES', move: '◄ ► : Move', rotate: '▲ / W : Rotate',
+            softDrop: '▼ / S : Soft drop', hardDrop: 'Space : Hard drop', windowSize: 'Window size:', baseDrop: 'Base drop:', resizeCopy: 'The grid and level were adapted to the new size.',
+            newWindowSize: 'New window size:', newBaseLevel: 'New base level:', drop: 'DROP', rotateOnly: 'ROTATE', emptyScores: 'No saved runs yet.', levelShort: 'Lv', nicknameRequired: 'Enter your name before starting Tetris.'
+        }
+    }
+};
+
+i18n?.registerTranslations('tetris', COPY, applyLanguage);
 
 // Tiempos y Ciclo
 let lastDropTime = 0;
@@ -174,15 +206,16 @@ function saveTopScore() {
 }
 
 function renderTopScores() {
+    const levelShort = i18n?.t('tetris.levelShort') || 'Nv';
     const markup = topScores.length
         ? topScores.map((entry, index) => `
             <div class="leaderboard-row">
                 <span class="leaderboard-rank">#${index + 1}</span>
-                <span class="leaderboard-name">${entry.nick} · Nv ${entry.level}</span>
+                <span class="leaderboard-name">${entry.nick} · ${levelShort} ${entry.level}</span>
                 <span class="leaderboard-score">${entry.score}</span>
             </div>
         `).join('')
-        : '<div class="leaderboard-empty">Todavía no hay partidas guardadas.</div>';
+        : `<div class="leaderboard-empty">${i18n?.t('tetris.emptyScores') || 'Todavía no hay partidas guardadas.'}</div>`;
 
     [leaderboardStart, leaderboardPause, leaderboardGameOver].forEach((target) => {
         if (target) target.innerHTML = markup;
@@ -250,6 +283,30 @@ function updateGameSpeed() {
     // Intervalo de caída: nivel 1 es 1000ms, nivel 10 es 100ms
     dropInterval = Math.max(100, 1000 - (currentLevel - 1) * 100);
     speedPreview.textContent = `${dropInterval} ms`;
+}
+
+function applyLanguage(lang = i18n?.lang || 'es') {
+    const subtitle = document.querySelector('#startScreen .game-subtitle');
+    const restartPrompt = document.querySelector('.restart-prompt');
+    const pauseInstruction = document.querySelector('.pause-instruction');
+    if (subtitle) {
+        if (lang === 'en') {
+            subtitle.dataset.touchText = 'Enter your nick, choose the starting level, and stack blocks with calibrated gravity from the start. Tap START and use the touch pad to move, rotate, and drop.';
+            subtitle.dataset.desktopText = 'Enter your nick, choose the starting level, and stack blocks with calibrated gravity from the start. ESC pauses, and on mobile use the touch pad.';
+        } else {
+            subtitle.dataset.touchText = 'Ingresá tu nick, elegí el nivel inicial y apilá bloques con caída calibrada desde el arranque. Tocá INICIAR y usá el pad táctil para mover, rotar y soltar.';
+            subtitle.dataset.desktopText = 'Ingresá tu nick, elegí el nivel inicial y apilá bloques con caída calibrada desde el arranque. ESC pausa y en móvil usá el pad táctil.';
+        }
+    }
+    if (restartPrompt) {
+        restartPrompt.dataset.touchHtml = lang === 'en' ? "Tap <span class='highlight-key'>PLAY AGAIN</span> to try again" : "Tocá <span class='highlight-key'>JUGAR DE NUEVO</span> para volver a intentar";
+        restartPrompt.dataset.desktopHtml = lang === 'en' ? "Press <span class='highlight-key'>SPACE</span> to try again" : "Presioná <span class='highlight-key'>ESPACIO</span> para volver a intentar";
+    }
+    if (pauseInstruction) {
+        pauseInstruction.dataset.touchHtml = lang === 'en' ? "Tap <span class='highlight-key'>RESUME</span> or choose your next step." : "Tocá <span class='highlight-key'>REANUDAR</span> o elegí tu próximo paso.";
+        pauseInstruction.dataset.desktopHtml = lang === 'en' ? "Press <span class='highlight-key'>ESC</span> to continue or choose your next step." : "Presioná <span class='highlight-key'>ESC</span> para continuar o elegí tu próximo paso.";
+    }
+    window.BORED_UI?.applyAdaptiveContent?.();
 }
 
 // Inicializar dimensiones
@@ -352,7 +409,7 @@ mobilePauseButton.addEventListener('click', () => {
 // --- ACCIONES DEL JUEGO ---
 
 function startGame() {
-    const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: 'Ingresá tu nombre antes de arrancar Tetris.' }) ?? sanitizeNickname(nicknameInput.value);
+    const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: i18n?.t('tetris.nicknameRequired') || 'Ingresá tu nombre antes de arrancar Tetris.' }) ?? sanitizeNickname(nicknameInput.value);
     if (!validatedNickname) {
         return;
     }
@@ -883,3 +940,10 @@ bindTouchAction(btnDown, () => {
 });
 bindTouchAction(btnRotate, () => rotatePiece());
 bindTouchAction(btnDrop, () => hardDrop());
+
+document.querySelector('.back-btn')?.addEventListener('click', (event) => {
+    const message = i18n?.lang === 'en' ? 'Are you sure you want to leave?' : '¿Seguro que querés salir?';
+    if (!window.confirm(message)) {
+        event.preventDefault();
+    }
+});

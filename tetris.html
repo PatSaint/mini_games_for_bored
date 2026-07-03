@@ -13,9 +13,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="tetris.css">
 </head>
-<body>
+<body data-i18n-title="tetris.meta.title">
     <!-- Botón Volver al Menú Principal -->
-    <a href="index.html" class="back-btn" onclick="return confirm('¿Seguro que querés salir?')">◀ VOLVER</a>
+    <a href="index.html" class="back-btn" data-i18n="common.back">◀ VOLVER</a>
     <div class="branding">By PatSaint</div>
 
     <!-- Contenedor Principal del Juego -->
@@ -29,7 +29,7 @@
         <div id="sidebar">
             <!-- Siguiente Pieza -->
             <div class="sidebar-panel next-panel">
-                <div class="panel-label">SIGUIENTE</div>
+                <div class="panel-label" data-i18n="tetris.next">SIGUIENTE</div>
                 <div class="next-canvas-wrapper">
                     <canvas id="nextCanvas" width="100" height="100"></canvas>
                 </div>
@@ -37,32 +37,32 @@
 
             <!-- Estadísticas -->
             <div class="sidebar-panel">
-                <div class="panel-label">PUNTOS</div>
+                <div class="panel-label" data-i18n="common.score">PUNTOS</div>
                 <div id="score" class="panel-value">0</div>
             </div>
 
             <div class="sidebar-panel">
-                <div class="panel-label">RÉCORD</div>
+                <div class="panel-label" data-i18n="common.highScore">RÉCORD</div>
                 <div id="highScore" class="panel-value">0</div>
             </div>
 
             <div class="sidebar-panel">
-                <div class="panel-label">LÍNEAS</div>
+                <div class="panel-label" data-i18n="tetris.lines">LÍNEAS</div>
                 <div id="linesDisplay" class="panel-value">0</div>
             </div>
 
             <div class="sidebar-panel highlights">
-                <div class="panel-label">NIVEL</div>
+                <div class="panel-label" data-i18n="common.level">NIVEL</div>
                 <div id="levelDisplay" class="panel-value glowing-text-pink">1</div>
             </div>
             
             <!-- Controles Cortos -->
             <div class="sidebar-panel controls-panel">
-                <div class="panel-label">CONTROLES</div>
-                <div class="mini-control">◄ ► : Mover</div>
-                <div class="mini-control">▲ / W : Rotar</div>
-                <div class="mini-control">▼ / S : Caída Suave</div>
-                <div class="mini-control">Espacio : Caída Rápida</div>
+                <div class="panel-label" data-i18n="common.controls">CONTROLES</div>
+                <div class="mini-control" data-i18n="tetris.move">◄ ► : Mover</div>
+                <div class="mini-control" data-i18n="tetris.rotate">▲ / W : Rotar</div>
+                <div class="mini-control" data-i18n="tetris.softDrop">▼ / S : Caída Suave</div>
+                <div class="mini-control" data-i18n="tetris.hardDrop">Espacio : Caída Rápida</div>
             </div>
         </div>
     </div>
@@ -74,11 +74,11 @@
             <h1 class="game-title neon-text-pink">NEON<br><span class="neon-text-cyan">TETRIS</span></h1>
             <p class="game-subtitle" data-touch-text="Ingresá tu nick, elegí el nivel inicial y apilá bloques con caída calibrada desde el arranque. Tocá INICIAR y usá el pad táctil para mover, rotar y soltar." data-desktop-text="Ingresá tu nick, elegí el nivel inicial y apilá bloques con caída calibrada desde el arranque. ESC pausa y en móvil usá el pad táctil.">Ingresá tu nick, elegí el nivel inicial y apilá bloques con caída calibrada desde el arranque. ESC pausa y en móvil usá el pad táctil.</p>
             <div class="form-group">
-                <label for="nicknameInput">NICKNAME (MAX 10)</label>
-                <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" autocomplete="off">
+                <label for="nicknameInput" data-i18n="common.nicknameMax">NICKNAME (MAX 10)</label>
+                <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" data-i18n-placeholder="common.player" autocomplete="off">
             </div>
             <div class="level-selector">
-                <label for="levelSelect">NIVEL INICIAL</label>
+                <label for="levelSelect" data-i18n="common.startLevel">NIVEL INICIAL</label>
                 <select id="levelSelect">
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -94,20 +94,20 @@
             </div>
             <div class="stats-preview">
                 <div class="preview-item">
-                    <span class="preview-label">Dimensión Ventana:</span>
+                    <span class="preview-label" data-i18n="tetris.windowSize">Dimensión Ventana:</span>
                     <span id="windowDim" class="preview-value">-- x --</span>
                 </div>
                 <div class="preview-item">
-                    <span class="preview-label">Nivel Inicial:</span>
+                    <span class="preview-label" data-i18n="common.startLevelLabel">Nivel Inicial:</span>
                     <span id="levelPreview" class="preview-value glowing-text-pink">--</span>
                 </div>
                 <div class="preview-item">
-                    <span class="preview-label">Caída Base:</span>
+                    <span class="preview-label" data-i18n="tetris.baseDrop">Caída Base:</span>
                     <span id="speedPreview" class="preview-value glowing-text-pink">--</span>
                 </div>
             </div>
             <div class="leaderboard-panel">
-                <div class="leaderboard-title">TOP 10 NEON</div>
+                <div class="leaderboard-title" data-i18n="common.top10Neon">TOP 10 NEON</div>
                 <div id="leaderboardStart" class="leaderboard-list"></div>
             </div>
             <div class="quick-links">
@@ -117,24 +117,24 @@
             </div>
             <div data-install-slot></div>
             <button id="startButton" class="action-btn btn-pink" data-touch-text="TOCÁ PARA INICIAR" data-desktop-text="PRESIONÁ ESPACIO O TOCÁ PARA INICIAR">PRESIONÁ ESPACIO O TOCÁ PARA INICIAR</button>
-            <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
+            <a href="index.html" class="menu-back-btn" data-i18n="common.backToMenu">VOLVER AL MENÚ</a>
         </div>
 
         <!-- Pantalla de Game Over -->
         <div id="gameOverScreen" class="menu-content hidden">
-            <h2 class="game-title neon-text-red">FIN DEL JUEGO</h2>
+            <h2 class="game-title neon-text-red" data-i18n="common.gameOver">FIN DEL JUEGO</h2>
             <div class="game-over-stats">
                 <div class="stat-box">
-                    <span class="stat-label">Puntaje Final</span>
+                    <span class="stat-label" data-i18n="common.finalScore">Puntaje Final</span>
                     <span id="finalScore" class="stat-value">0</span>
                 </div>
                 <div class="stat-box">
-                    <span class="stat-label">Mejor Puntaje</span>
+                    <span class="stat-label" data-i18n="common.bestScore">Mejor Puntaje</span>
                     <span id="finalHighScore" class="stat-value">0</span>
                 </div>
             </div>
             <div class="leaderboard-panel compact-panel">
-                <div class="leaderboard-title">MEJORES PARTIDAS</div>
+                <div class="leaderboard-title" data-i18n="common.bestRuns">MEJORES PARTIDAS</div>
                 <div id="leaderboardGameOver" class="leaderboard-list"></div>
             </div>
             <div class="quick-links">
@@ -143,15 +143,15 @@
                 <a href="snake.html" class="quick-link">SNAKE</a>
             </div>
             <p class="restart-prompt" data-touch-html="Tocá <span class='highlight-key'>JUGAR DE NUEVO</span> para volver a intentar" data-desktop-html="Presioná <span class='highlight-key'>ESPACIO</span> para volver a intentar">Presioná <span class="highlight-key">ESPACIO</span> para volver a intentar</p>
-            <button id="restartButton" class="action-btn btn-red">JUGAR DE NUEVO</button>
+            <button id="restartButton" class="action-btn btn-red" data-i18n="common.playAgain">JUGAR DE NUEVO</button>
         </div>
 
         <!-- Pantalla de Pausa -->
         <div id="pauseScreen" class="menu-content hidden">
-            <h2 class="game-title neon-text-yellow">PAUSA</h2>
+            <h2 class="game-title neon-text-yellow" data-i18n="common.pause">PAUSA</h2>
             <p class="pause-instruction" data-touch-html="Tocá <span class='highlight-key'>REANUDAR</span> o elegí tu próximo paso." data-desktop-html="Presioná <span class='highlight-key'>ESC</span> para continuar o elegí tu próximo paso.">Presioná <span class="highlight-key">ESC</span> para continuar o elegí tu próximo paso.</p>
             <div class="leaderboard-panel compact-panel">
-                <div class="leaderboard-title">TOP 10</div>
+                <div class="leaderboard-title" data-i18n="common.top10">TOP 10</div>
                 <div id="leaderboardPause" class="leaderboard-list"></div>
             </div>
             <div class="quick-links">
@@ -159,26 +159,26 @@
                 <a href="simon.html" class="quick-link">SIMON</a>
                 <a href="snake.html" class="quick-link">SNAKE</a>
             </div>
-            <button id="resumeButton" class="action-btn btn-yellow">REANUDAR</button>
-            <button id="pauseRestartButton" class="action-btn btn-red">REINICIAR PARTIDA</button>
-            <a href="index.html" class="menu-back-btn">IR AL HOME</a>
+            <button id="resumeButton" class="action-btn btn-yellow" data-i18n="common.resume">REANUDAR</button>
+            <button id="pauseRestartButton" class="action-btn btn-red" data-i18n="common.restartMatch">REINICIAR PARTIDA</button>
+            <a href="index.html" class="menu-back-btn" data-i18n="common.goHome">IR AL HOME</a>
         </div>
 
         <!-- Pantalla de Redimensionamiento -->
         <div id="resizeScreen" class="menu-content hidden">
-            <h2 class="game-title neon-text-blue">VENTANA MODIFICADA</h2>
-            <p class="game-subtitle">La rejilla y el nivel han sido adaptados al nuevo tamaño.</p>
+            <h2 class="game-title neon-text-blue" data-i18n="common.windowChanged">VENTANA MODIFICADA</h2>
+            <p class="game-subtitle" data-i18n="tetris.resizeCopy">La rejilla y el nivel han sido adaptados al nuevo tamaño.</p>
             <div class="stats-preview">
                 <div class="preview-item">
-                    <span class="preview-label">Nueva Dimensión Ventana:</span>
+                    <span class="preview-label" data-i18n="tetris.newWindowSize">Nueva Dimensión Ventana:</span>
                     <span id="newWindowDim" class="preview-value">-- x --</span>
                 </div>
                 <div class="preview-item">
-                    <span class="preview-label">Nuevo Nivel Base:</span>
+                    <span class="preview-label" data-i18n="tetris.newBaseLevel">Nuevo Nivel Base:</span>
                     <span id="newLevelPreview" class="preview-value glowing-text-pink">--</span>
                 </div>
             </div>
-            <button id="resizeResumeButton" class="action-btn btn-blue">REANUDAR JUEGO</button>
+            <button id="resizeResumeButton" class="action-btn btn-blue" data-i18n="common.resumeGame">REANUDAR JUEGO</button>
         </div>
     </div>
 
@@ -192,9 +192,9 @@
         </div>
         <!-- Parte Derecha: Acciones -->
         <div class="gamepad-right">
-            <button id="mobilePauseButton" class="action-btn-circle btn-yellow-glow">PAUSA</button>
-            <button id="btnDrop" class="action-btn-circle btn-blue-glow">CAÍDA</button>
-            <button id="btnRotate" class="action-btn-circle btn-pink-glow">ROTAR</button>
+            <button id="mobilePauseButton" class="action-btn-circle btn-yellow-glow" data-i18n="common.pause">PAUSA</button>
+            <button id="btnDrop" class="action-btn-circle btn-blue-glow" data-i18n="tetris.drop">CAÍDA</button>
+            <button id="btnRotate" class="action-btn-circle btn-pink-glow" data-i18n="tetris.rotateOnly">ROTAR</button>
         </div>
     </div>
 

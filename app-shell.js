@@ -3,9 +3,67 @@
     const isStandalone = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (/mac/i.test(navigator.platform) && navigator.maxTouchPoints > 1);
     const mode = isTouchDevice ? 'touch' : 'desktop';
+    const LANGUAGE_STORAGE_KEY = 'bored.language';
+
+    const I18N_MESSAGES = {
+        es: {
+            shell: {
+                language: 'IDIOMA',
+                langEn: 'EN',
+                langEs: 'ES',
+                nicknameRequired: 'Ingresá tu nick para jugar.',
+                soundLabel: 'SONIDO',
+                soundOn: 'ACTIVAR SONIDO',
+                soundOff: 'MUTEAR SONIDO',
+                soundMutedState: 'MUTEADO',
+                soundOnState: 'ACTIVO {value}%',
+                soundMutedMessage: 'El audio está apagado. Subí el volumen o activalo para escuchar los cues.',
+                soundVolumeMessage: 'Volumen {value}%.',
+                installed: 'Ya la tenés instalada. Abrila como app cuando quieras.',
+                installPromptTouch: 'Instalala y abrila como acceso directo, sin barras del navegador.',
+                installPromptDesktop: 'Instalala para abrirla como app independiente desde tu escritorio.',
+                installIos: 'En Safari: Compartir → Agregar a pantalla de inicio.',
+                installFallback: 'Si tu navegador no ofrece instalar, usá su menú para crear un acceso directo.',
+                installApp: 'INSTALAR APP',
+                installGuideTouch: 'CÓMO INSTALAR',
+                installGuideDesktop: 'AGREGAR ACCESO DIRECTO'
+            }
+        },
+        en: {
+            shell: {
+                language: 'LANGUAGE',
+                langEn: 'EN',
+                langEs: 'ES',
+                nicknameRequired: 'Enter your nickname to play.',
+                soundLabel: 'SOUND',
+                soundOn: 'ENABLE SOUND',
+                soundOff: 'MUTE SOUND',
+                soundMutedState: 'MUTED',
+                soundOnState: 'ON {value}%',
+                soundMutedMessage: 'Audio is off. Raise the volume or enable it to hear the cues.',
+                soundVolumeMessage: 'Volume {value}%.',
+                installed: 'It is already installed. Open it as an app whenever you want.',
+                installPromptTouch: 'Install it and open it as a shortcut without browser bars.',
+                installPromptDesktop: 'Install it to open it as a standalone desktop app.',
+                installIos: 'In Safari: Share → Add to Home Screen.',
+                installFallback: 'If your browser does not offer install, use its menu to create a shortcut.',
+                installApp: 'INSTALL APP',
+                installGuideTouch: 'HOW TO INSTALL',
+                installGuideDesktop: 'ADD SHORTCUT'
+            }
+        }
+    };
+
+    const i18nState = {
+        lang: detectLanguage(),
+        listeners: new Set(),
+        bundles: new Map()
+    };
 
     window.BORED_DEVICE = { isTouchDevice, isStandalone, isIOS, mode };
     document.documentElement.dataset.inputMode = mode;
+    document.documentElement.lang = i18nState.lang;
+    document.documentElement.dataset.lang = i18nState.lang;
 
     const installState = {
         deferredPrompt: null,
@@ -136,8 +194,155 @@
                 color: rgba(255,255,255,.68);
                 text-align: center;
             }
+            .lang-switcher {
+                position: fixed;
+                top: 22px;
+                right: 22px;
+                z-index: 220;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 10px;
+                border-radius: 14px;
+                border: 1px solid rgba(255,255,255,.08);
+                background: rgba(10, 10, 15, 0.82);
+                backdrop-filter: blur(12px);
+                box-shadow: 0 8px 24px rgba(0,0,0,.35);
+            }
+            .lang-switcher-label {
+                font: 700 10px 'Orbitron', sans-serif;
+                letter-spacing: 1.6px;
+                color: rgba(255,255,255,.62);
+            }
+            .lang-switcher-group {
+                display: inline-flex;
+                gap: 4px;
+            }
+            .lang-switcher-btn {
+                min-width: 42px;
+                padding: 8px 10px;
+                border-radius: 10px;
+                border: 1px solid rgba(255,255,255,.12);
+                background: rgba(255,255,255,.04);
+                color: rgba(255,255,255,.82);
+                font: 700 10px 'Orbitron', sans-serif;
+                letter-spacing: 1.4px;
+                cursor: pointer;
+                transition: .2s ease;
+            }
+            .lang-switcher-btn.is-active {
+                border-color: rgba(0,240,255,.72);
+                color: #00f0ff;
+                box-shadow: 0 0 14px rgba(0,240,255,.2);
+            }
+            @media (max-width: 640px) {
+                .lang-switcher {
+                    top: 12px;
+                    right: 12px;
+                    padding: 6px 8px;
+                    gap: 6px;
+                }
+                .lang-switcher-label {
+                    font-size: 9px;
+                    letter-spacing: 1.2px;
+                }
+                .lang-switcher-btn {
+                    min-width: 38px;
+                    padding: 7px 8px;
+                    font-size: 9px;
+                }
+            }
         `;
         document.head.appendChild(style);
+    }
+
+    function detectLanguage() {
+        try {
+            const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+            if (saved === 'es' || saved === 'en') return saved;
+        } catch {
+            // no-op
+        }
+        const browserLanguage = `${navigator.language || navigator.userLanguage || ''}`.toLowerCase();
+        return browserLanguage.startsWith('en') ? 'en' : 'es';
+    }
+
+    function interpolate(template, params = {}) {
+        return String(template || '').replace(/\{(\w+)\}/g, (_, key) => params[key] ?? '');
+    }
+
+    function getBundle(lang = i18nState.lang) {
+        return {
+            ...(I18N_MESSAGES[lang] || {}),
+            ...Array.from(i18nState.bundles.values()).reduce((acc, bundle) => Object.assign(acc, bundle?.[lang] || {}), {})
+        };
+    }
+
+    function translate(key, params = {}, lang = i18nState.lang) {
+        if (!key) return '';
+        const bundle = getBundle(lang);
+        const value = key.split('.').reduce((current, part) => current?.[part], bundle);
+        return interpolate(value ?? key, params);
+    }
+
+    function translatePageElements() {
+        document.querySelectorAll('[data-i18n]').forEach((element) => {
+            element.textContent = translate(element.dataset.i18n);
+        });
+        document.querySelectorAll('[data-i18n-html]').forEach((element) => {
+            element.innerHTML = translate(element.dataset.i18nHtml);
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach((element) => {
+            element.setAttribute('placeholder', translate(element.dataset.i18nPlaceholder));
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach((element) => {
+            element.setAttribute('title', translate(element.dataset.i18nTitle));
+        });
+        document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
+            element.setAttribute('aria-label', translate(element.dataset.i18nAriaLabel));
+        });
+        const titleKey = document.body?.dataset?.i18nTitle;
+        if (titleKey) {
+            document.title = translate(titleKey);
+        }
+    }
+
+    function notifyLanguageChange() {
+        document.documentElement.lang = i18nState.lang;
+        document.documentElement.dataset.lang = i18nState.lang;
+        translatePageElements();
+        renderLanguageToggle();
+        renderInstallState();
+        renderSoundState();
+        i18nState.listeners.forEach((listener) => listener(i18nState.lang));
+    }
+
+    function setLanguage(nextLang) {
+        const normalized = nextLang === 'en' ? 'en' : 'es';
+        i18nState.lang = normalized;
+        try {
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, normalized);
+        } catch {
+            // no-op
+        }
+        notifyLanguageChange();
+    }
+
+    function registerTranslations(namespace, messages, onChange) {
+        if (namespace && messages) {
+            i18nState.bundles.set(namespace, messages);
+        }
+        if (typeof onChange === 'function') {
+            i18nState.listeners.add(onChange);
+            onChange(i18nState.lang);
+        }
+        translatePageElements();
+    }
+
+    function onLanguageChange(listener) {
+        if (typeof listener !== 'function') return () => {};
+        i18nState.listeners.add(listener);
+        return () => i18nState.listeners.delete(listener);
     }
 
     function applyAdaptiveContent() {
@@ -188,7 +393,7 @@
         warning.textContent = '';
     }
 
-    function showNicknameWarning(input, message = 'Ingresá tu nick para jugar.') {
+    function showNicknameWarning(input, message = translate('shell.nicknameRequired')) {
         if (!input) return;
         const warning = ensureNicknameWarning(input);
         input.classList.add('input-invalid');
@@ -218,7 +423,7 @@
     function requireNickname(input, options = {}) {
         const sanitized = normalizeNickname(input?.value);
         if (!sanitized) {
-            showNicknameWarning(input, options.message || 'Ingresá tu nick para jugar.');
+            showNicknameWarning(input, options.message || translate('shell.nicknameRequired'));
             input?.focus?.();
             return null;
         }
@@ -232,7 +437,8 @@
         attachNicknameValidation,
         requireNickname,
         showNicknameWarning,
-        clearNicknameWarning
+        clearNicknameWarning,
+        applyAdaptiveContent
     };
 
     function saveSoundPrefs() {
@@ -249,22 +455,27 @@
     }
 
     function getSoundLabel() {
-        return soundState.muted || soundState.volume <= 0 ? 'MUTED' : `ON ${Math.round(soundState.volume * 100)}%`;
+        return soundState.muted || soundState.volume <= 0
+            ? translate('shell.soundMutedState')
+            : translate('shell.soundOnState', { value: Math.round(soundState.volume * 100) });
     }
 
     function renderSoundState() {
         const label = getSoundLabel();
         const message = soundState.muted
-            ? 'El audio está apagado. Subí el volumen o activalo para escuchar los cues.'
-            : `Volumen ${Math.round(soundState.volume * 100)}%.`;
+            ? translate('shell.soundMutedMessage')
+            : translate('shell.soundVolumeMessage', { value: Math.round(soundState.volume * 100) });
 
         soundState.slots.forEach(({ button, range, state, feedback }) => {
-            button.textContent = soundState.muted ? 'ACTIVAR SONIDO' : 'MUTEAR SONIDO';
+            button.textContent = soundState.muted ? translate('shell.soundOn') : translate('shell.soundOff');
             button.setAttribute('aria-pressed', String(!soundState.muted));
             range.value = String(Math.round(soundState.volume * 100));
             state.textContent = label;
             feedback.textContent = message;
             feedback.hidden = false;
+        });
+        document.querySelectorAll('.sound-label').forEach((element) => {
+            element.textContent = translate('shell.soundLabel');
         });
     }
 
@@ -306,7 +517,7 @@
 
                 const head = document.createElement('div');
                 head.className = 'sound-head';
-                head.innerHTML = '<span class="sound-label">SONIDO</span>';
+                head.innerHTML = `<span class="sound-label">${translate('shell.soundLabel')}</span>`;
 
                 const state = document.createElement('span');
                 state.className = 'sound-state';
@@ -541,17 +752,17 @@
 
     function getInstallMessage() {
         if (isStandalone) {
-            return 'Ya la tenés instalada. Abrila como app cuando quieras.';
+            return translate('shell.installed');
         }
         if (installState.deferredPrompt) {
             return isTouchDevice
-                ? 'Instalala y abrila como acceso directo, sin barras del navegador.'
-                : 'Instalala para abrirla como app independiente desde tu escritorio.';
+                ? translate('shell.installPromptTouch')
+                : translate('shell.installPromptDesktop');
         }
         if (isIOS && isTouchDevice) {
-            return 'En Safari: Compartir → Agregar a pantalla de inicio.';
+            return translate('shell.installIos');
         }
-        return 'Si tu navegador no ofrece instalar, usá su menú para crear un acceso directo.';
+        return translate('shell.installFallback');
     }
 
     function renderInstallState() {
@@ -569,14 +780,14 @@
             if (installState.deferredPrompt) {
                 button.hidden = false;
                 button.disabled = false;
-                button.textContent = 'INSTALAR APP';
+                button.textContent = translate('shell.installApp');
                 button.dataset.installMode = 'prompt';
                 return;
             }
 
             button.hidden = false;
             button.disabled = false;
-            button.textContent = isIOS && isTouchDevice ? 'CÓMO INSTALAR' : 'AGREGAR ACCESO DIRECTO';
+            button.textContent = isIOS && isTouchDevice ? translate('shell.installGuideTouch') : translate('shell.installGuideDesktop');
             button.dataset.installMode = 'guide';
         });
     }
@@ -644,16 +855,61 @@
         renderInstallState();
     });
 
+    let languageToggle = null;
+
+    function ensureLanguageToggle() {
+        ensureSharedStyles();
+        if (languageToggle?.isConnected) return languageToggle;
+        languageToggle = document.createElement('div');
+        languageToggle.className = 'lang-switcher';
+        languageToggle.innerHTML = `
+            <span class="lang-switcher-label"></span>
+            <div class="lang-switcher-group">
+                <button type="button" class="lang-switcher-btn" data-lang="es"></button>
+                <button type="button" class="lang-switcher-btn" data-lang="en"></button>
+            </div>
+        `;
+        languageToggle.querySelectorAll('[data-lang]').forEach((button) => {
+            button.addEventListener('click', () => setLanguage(button.dataset.lang));
+        });
+        document.body.appendChild(languageToggle);
+        return languageToggle;
+    }
+
+    function renderLanguageToggle() {
+        const toggle = ensureLanguageToggle();
+        toggle.querySelector('.lang-switcher-label').textContent = translate('shell.language');
+        toggle.querySelectorAll('[data-lang]').forEach((button) => {
+            const lang = button.dataset.lang;
+            button.textContent = translate(lang === 'es' ? 'shell.langEs' : 'shell.langEn');
+            button.classList.toggle('is-active', lang === i18nState.lang);
+            button.setAttribute('aria-pressed', String(lang === i18nState.lang));
+        });
+    }
+
+    window.BORED_I18N = {
+        get lang() { return i18nState.lang; },
+        t: translate,
+        setLanguage,
+        onLanguageChange,
+        registerTranslations,
+        translatePage: translatePageElements
+    };
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             applyAdaptiveContent();
             setupInstallSlots();
             setupSoundSlots();
+            renderLanguageToggle();
+            translatePageElements();
         }, { once: true });
     } else {
         applyAdaptiveContent();
         setupInstallSlots();
         setupSoundSlots();
+        renderLanguageToggle();
+        translatePageElements();
     }
 
     registerServiceWorker();

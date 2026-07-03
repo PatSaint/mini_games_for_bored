@@ -13,9 +13,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="snake.css">
 </head>
-<body>
+<body data-i18n-title="snake.meta.title">
     <!-- Botón Volver al Menú Principal -->
-    <a href="index.html" class="back-btn">◀ VOLVER</a>
+    <a href="index.html" class="back-btn" data-i18n="common.back">◀ VOLVER</a>
     <div class="branding">By PatSaint</div>
 
     <!-- Canvas del Juego -->
@@ -24,19 +24,19 @@
     <!-- Interfaz de Usuario / HUD -->
     <div id="hud">
         <div class="hud-panel">
-            <div class="hud-label">PUNTOS</div>
+            <div class="hud-label" data-i18n="common.score">PUNTOS</div>
             <div id="score" class="hud-value">0</div>
         </div>
         <div class="hud-panel">
-            <div class="hud-label">RÉCORD</div>
+            <div class="hud-label" data-i18n="common.highScore">RÉCORD</div>
             <div id="highScore" class="hud-value">0</div>
         </div>
         <div class="hud-panel">
-            <div class="hud-label">LARGO</div>
+            <div class="hud-label" data-i18n="snake.length">LARGO</div>
             <div id="snakeLength" class="hud-value">3</div>
         </div>
         <div class="hud-panel highlights">
-            <div class="hud-label">NIVEL</div>
+            <div class="hud-label" data-i18n="common.level">NIVEL</div>
             <div id="levelDisplay" class="hud-value glowing-text-blue">1</div>
         </div>
     </div>
@@ -48,11 +48,11 @@
             <h1 class="game-title neon-text-pink">NEON<br><span class="neon-text-cyan">SNAKE</span></h1>
             <p class="game-subtitle" data-touch-text="Ingresá tu nick, elegí el nivel inicial, definí tu control móvil y dominá la grilla neón. Tocá INICIAR y usá PAUSA cuando haga falta." data-desktop-text="Ingresá tu nick, elegí el nivel inicial y dominá la grilla neón. ESC pausa la partida y en móvil podés elegir swipe, joystick o botones.">Ingresá tu nick, elegí el nivel inicial y dominá la grilla neón. ESC pausa la partida y en móvil podés elegir swipe, joystick o botones.</p>
             <div class="form-group">
-                <label for="nicknameInput">NICKNAME (MAX 10)</label>
-                <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" autocomplete="off">
+                <label for="nicknameInput" data-i18n="common.nicknameMax">NICKNAME (MAX 10)</label>
+                <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" data-i18n-placeholder="common.player" autocomplete="off">
             </div>
             <div class="level-selector">
-                <label for="levelSelect">NIVEL INICIAL</label>
+                <label for="levelSelect" data-i18n="common.startLevel">NIVEL INICIAL</label>
                 <select id="levelSelect">
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -68,21 +68,21 @@
             </div>
             <div class="stats-preview">
                 <div class="preview-item">
-                    <span class="preview-label">Dimensión:</span>
+                    <span class="preview-label" data-i18n="common.dimension">Dimensión:</span>
                     <span id="gridDim" class="preview-value">-- x --</span>
                 </div>
                 <div class="preview-item">
-                    <span class="preview-label">Nivel Seleccionado:</span>
+                    <span class="preview-label" data-i18n="snake.selectedLevel">Nivel Seleccionado:</span>
                     <span id="levelPreview" class="preview-value glowing-text-blue">--</span>
                 </div>
                 <div class="preview-item">
-                    <span class="preview-label">Multiplicador:</span>
+                    <span class="preview-label" data-i18n="snake.multiplier">Multiplicador:</span>
                     <span id="multiplierPreview" class="preview-value glowing-text-blue">x1</span>
                 </div>
             </div>
             <div class="settings-panel">
-                <div class="settings-title">CONTROL MÓVIL</div>
-                <p class="settings-copy">Elegí cómo querés jugar en táctil. Se guarda automáticamente y en desktop seguís usando teclado.</p>
+                <div class="settings-title" data-i18n="snake.mobileControls">CONTROL MÓVIL</div>
+                <p class="settings-copy" data-i18n="snake.mobileControlsCopy">Elegí cómo querés jugar en táctil. Se guarda automáticamente y en desktop seguís usando teclado.</p>
                 <div class="control-mode-selector" role="radiogroup" aria-label="Modo de control móvil Snake">
                     <label class="control-mode-option">
                         <input type="radio" name="mobileControlMode" value="swipe" checked>
@@ -94,7 +94,7 @@
                     </label>
                     <label class="control-mode-option">
                         <input type="radio" name="mobileControlMode" value="buttons">
-                        <span>BOTONES</span>
+                        <span data-i18n="snake.buttons">BOTONES</span>
                     </label>
                 </div>
             </div>
@@ -104,7 +104,7 @@
                 <div id="controlGuideSecondary" class="control-desc" data-touch-text="Pausa táctica abajo • podés cambiar el modo desde este menú" data-desktop-text="ESC pausa • en móvil elegís swipe, joystick o botones">ESC pausa • en móvil elegís swipe, joystick o botones</div>
             </div>
             <div class="leaderboard-panel">
-                <div class="leaderboard-title">TOP 10 NEON</div>
+                <div class="leaderboard-title" data-i18n="common.top10Neon">TOP 10 NEON</div>
                 <div id="leaderboardStart" class="leaderboard-list"></div>
             </div>
             <div class="quick-links">
@@ -114,24 +114,24 @@
             </div>
             <div data-install-slot></div>
             <button id="startButton" class="action-btn" data-touch-text="TOCÁ PARA INICIAR" data-desktop-text="INICIAR JUEGO">INICIAR JUEGO</button>
-            <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
+            <a href="index.html" class="menu-back-btn" data-i18n="common.backToMenu">VOLVER AL MENÚ</a>
         </div>
 
         <!-- Pantalla de Game Over -->
         <div id="gameOverScreen" class="menu-content hidden">
-            <h2 class="game-title neon-text-red">FIN DEL JUEGO</h2>
+            <h2 class="game-title neon-text-red" data-i18n="common.gameOver">FIN DEL JUEGO</h2>
             <div class="game-over-stats">
                 <div class="stat-box">
-                    <span class="stat-label">Puntaje Final</span>
+                    <span class="stat-label" data-i18n="common.finalScore">Puntaje Final</span>
                     <span id="finalScore" class="stat-value">0</span>
                 </div>
                 <div class="stat-box">
-                    <span class="stat-label">Mejor Puntaje</span>
+                    <span class="stat-label" data-i18n="common.bestScore">Mejor Puntaje</span>
                     <span id="finalHighScore" class="stat-value">0</span>
                 </div>
             </div>
             <div class="leaderboard-panel compact-panel">
-                <div class="leaderboard-title">MEJORES PARTIDAS</div>
+                <div class="leaderboard-title" data-i18n="common.bestRuns">MEJORES PARTIDAS</div>
                 <div id="leaderboardGameOver" class="leaderboard-list"></div>
             </div>
             <div class="quick-links">
@@ -140,15 +140,15 @@
                 <a href="tetris.html" class="quick-link">TETRIS</a>
             </div>
             <p class="restart-prompt" data-touch-html="Tocá <span class='highlight-key'>JUGAR DE NUEVO</span> para volver a intentar" data-desktop-html="Presioná <span class='highlight-key'>ESPACIO</span> para volver a intentar">Presioná <span class="highlight-key">ESPACIO</span> para volver a intentar</p>
-            <button id="restartButton" class="action-btn btn-red">JUGAR DE NUEVO</button>
+            <button id="restartButton" class="action-btn btn-red" data-i18n="common.playAgain">JUGAR DE NUEVO</button>
         </div>
 
         <!-- Pantalla de Pausa -->
         <div id="pauseScreen" class="menu-content hidden">
-            <h2 class="game-title neon-text-yellow">PAUSA</h2>
+            <h2 class="game-title neon-text-yellow" data-i18n="common.pause">PAUSA</h2>
             <p class="pause-instruction" data-touch-html="Tocá <span class='highlight-key'>REANUDAR</span> o elegí tu próximo movimiento." data-desktop-html="Presioná <span class='highlight-key'>ESC</span> para continuar o elegí tu próximo movimiento.">Presioná <span class="highlight-key">ESC</span> para continuar o elegí tu próximo movimiento.</p>
             <div class="leaderboard-panel compact-panel">
-                <div class="leaderboard-title">TOP 10</div>
+                <div class="leaderboard-title" data-i18n="common.top10">TOP 10</div>
                 <div id="leaderboardPause" class="leaderboard-list"></div>
             </div>
             <div class="quick-links">
@@ -156,26 +156,26 @@
                 <a href="simon.html" class="quick-link">SIMON</a>
                 <a href="tetris.html" class="quick-link">TETRIS</a>
             </div>
-            <button id="resumeButton" class="action-btn btn-yellow">REANUDAR</button>
-            <button id="pauseRestartButton" class="action-btn btn-red">REINICIAR PARTIDA</button>
-            <a href="index.html" class="menu-back-btn">IR AL HOME</a>
+            <button id="resumeButton" class="action-btn btn-yellow" data-i18n="common.resume">REANUDAR</button>
+            <button id="pauseRestartButton" class="action-btn btn-red" data-i18n="common.restartMatch">REINICIAR PARTIDA</button>
+            <a href="index.html" class="menu-back-btn" data-i18n="common.goHome">IR AL HOME</a>
         </div>
 
         <!-- Pantalla de Redimensionamiento -->
         <div id="resizeScreen" class="menu-content hidden">
-            <h2 class="game-title neon-text-blue">VENTANA MODIFICADA</h2>
-            <p class="game-subtitle">La rejilla y el nivel han sido adaptados al nuevo tamaño.</p>
+            <h2 class="game-title neon-text-blue" data-i18n="common.windowChanged">VENTANA MODIFICADA</h2>
+            <p class="game-subtitle" data-i18n="snake.resizeCopy">La rejilla y el nivel han sido adaptados al nuevo tamaño.</p>
             <div class="stats-preview">
                 <div class="preview-item">
-                    <span class="preview-label">Nueva Dimensión:</span>
+                    <span class="preview-label" data-i18n="snake.newDimension">Nueva Dimensión:</span>
                     <span id="newGridDim" class="preview-value">-- x --</span>
                 </div>
                 <div class="preview-item">
-                    <span class="preview-label">Nuevo Nivel:</span>
+                    <span class="preview-label" data-i18n="snake.newLevel">Nuevo Nivel:</span>
                     <span id="newLevelPreview" class="preview-value glowing-text-blue">--</span>
                 </div>
             </div>
-            <button id="resizeResumeButton" class="action-btn btn-blue">REANUDAR JUEGO</button>
+            <button id="resizeResumeButton" class="action-btn btn-blue" data-i18n="common.resumeGame">REANUDAR JUEGO</button>
         </div>
     </div>
 
@@ -185,7 +185,7 @@
             <div id="swipeControlMode" class="mobile-control-mode mobile-control-mode-swipe">
                 <div class="swipe-panel">
                     <div class="swipe-orb"></div>
-                    <div class="swipe-copy">DESLIZÁ SOBRE LA GRILLA</div>
+                    <div class="swipe-copy" data-i18n="snake.swipeGrid">DESLIZÁ SOBRE LA GRILLA</div>
                 </div>
             </div>
             <div id="joystickControlMode" class="mobile-control-mode hidden" aria-hidden="true">
@@ -204,8 +204,8 @@
             </div>
         </div>
         <div class="mobile-actions">
-            <button id="mobilePauseButton" class="action-btn-circle btn-yellow-glow">PAUSA</button>
-            <div id="mobileHint" class="mobile-hint" data-touch-text="SWIPE EN GRILLA • BOTÓN PAUSA" data-desktop-text="ESC PAUSA • TECLAS FLECHA / WASD">ESC PAUSA • TECLAS FLECHA / WASD</div>
+            <button id="mobilePauseButton" class="action-btn-circle btn-yellow-glow" data-i18n="common.pause">PAUSA</button>
+        <div id="mobileHint" class="mobile-hint" data-touch-text="SWIPE EN GRILLA • BOTÓN PAUSA" data-desktop-text="ESC PAUSA • TECLAS FLECHA / WASD">ESC PAUSA • TECLAS FLECHA / WASD</div>
         </div>
     </div>
 
