@@ -21,3 +21,8 @@ Suggested mapping:
 - Simon → `midis/simon/gather-your-party.mid`
 - Game of Life → `midis/life/sitar-jam.mid`
 - Minesweeper → `midis/minesweeper/mine-all-mine.mid`
+
+## Generated MIDI Pack
+
+- midis/generated/ contains per-action MIDI cues created locally with generate-midi-pack.py and generate-midi-pack.ps1.
+
