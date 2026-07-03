@@ -46,7 +46,7 @@
         <!-- Pantalla de Inicio -->
         <div id="startScreen" class="menu-content">
             <h1 class="game-title neon-text-pink">NEON<br><span class="neon-text-cyan">SNAKE</span></h1>
-            <p class="game-subtitle" data-touch-text="Ingresá tu nick, elegí el nivel inicial y dominá la grilla neón. Tocá INICIAR, deslizate con la cruceta táctil y usá PAUSA cuando haga falta." data-desktop-text="Ingresá tu nick, elegí el nivel inicial y dominá la grilla neón. ESC pausa la partida y en móvil usá la cruceta táctil.">Ingresá tu nick, elegí el nivel inicial y dominá la grilla neón. ESC pausa la partida y en móvil usá la cruceta táctil.</p>
+            <p class="game-subtitle" data-touch-text="Ingresá tu nick, elegí el nivel inicial, definí tu control móvil y dominá la grilla neón. Tocá INICIAR y usá PAUSA cuando haga falta." data-desktop-text="Ingresá tu nick, elegí el nivel inicial y dominá la grilla neón. ESC pausa la partida y en móvil podés elegir swipe, joystick o botones.">Ingresá tu nick, elegí el nivel inicial y dominá la grilla neón. ESC pausa la partida y en móvil podés elegir swipe, joystick o botones.</p>
             <div class="form-group">
                 <label for="nicknameInput">NICKNAME (MAX 10)</label>
                 <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" autocomplete="off">
@@ -80,10 +80,28 @@
                     <span id="multiplierPreview" class="preview-value glowing-text-blue">x1</span>
                 </div>
             </div>
+            <div class="settings-panel">
+                <div class="settings-title">CONTROL MÓVIL</div>
+                <p class="settings-copy">Elegí cómo querés jugar en táctil. Se guarda automáticamente y en desktop seguís usando teclado.</p>
+                <div class="control-mode-selector" role="radiogroup" aria-label="Modo de control móvil Snake">
+                    <label class="control-mode-option">
+                        <input type="radio" name="mobileControlMode" value="swipe" checked>
+                        <span>SWIPE</span>
+                    </label>
+                    <label class="control-mode-option">
+                        <input type="radio" name="mobileControlMode" value="joystick">
+                        <span>JOYSTICK</span>
+                    </label>
+                    <label class="control-mode-option">
+                        <input type="radio" name="mobileControlMode" value="buttons">
+                        <span>BOTONES</span>
+                    </label>
+                </div>
+            </div>
             <div class="controls-guide">
-                <div class="control-key" data-touch-text="TOCÁ LA CRUCETA" data-desktop-text="▲ ▼ ◄ ►">▲ ▼ ◄ ►</div>
-                <div class="control-desc" data-touch-text="Deslizate con los botones táctiles para moverte" data-desktop-text="o W A S D para moverte">o W A S D para moverte</div>
-                <div class="control-desc" data-touch-text="PAUSA frena la partida • tocá la cruceta inferior" data-desktop-text="ESC pausa • táctil: usá la cruceta inferior">ESC pausa • táctil: usá la cruceta inferior</div>
+                <div id="controlGuideKey" class="control-key" data-touch-text="SWIPE" data-desktop-text="▲ ▼ ◄ ►">▲ ▼ ◄ ►</div>
+                <div id="controlGuidePrimary" class="control-desc" data-touch-text="Deslizá sobre la grilla para cambiar de dirección" data-desktop-text="o W A S D para moverte">o W A S D para moverte</div>
+                <div id="controlGuideSecondary" class="control-desc" data-touch-text="Pausa táctica abajo • podés cambiar el modo desde este menú" data-desktop-text="ESC pausa • en móvil elegís swipe, joystick o botones">ESC pausa • en móvil elegís swipe, joystick o botones</div>
             </div>
             <div class="leaderboard-panel">
                 <div class="leaderboard-title">TOP 10 NEON</div>
@@ -163,15 +181,31 @@
 
     <!-- Controles Táctiles (Móvil) -->
     <div id="mobileController" class="gamepad-container">
-        <div class="dpad-diamond">
-            <button id="btnUp" class="dpad-btn btn-up">▲</button>
-            <button id="btnLeft" class="dpad-btn btn-left">◄</button>
-            <button id="btnRight" class="dpad-btn btn-right">►</button>
-            <button id="btnDown" class="dpad-btn btn-down">▼</button>
+        <div id="mobileControlsViewport" class="mobile-controls-viewport">
+            <div id="swipeControlMode" class="mobile-control-mode mobile-control-mode-swipe">
+                <div class="swipe-panel">
+                    <div class="swipe-orb"></div>
+                    <div class="swipe-copy">DESLIZÁ SOBRE LA GRILLA</div>
+                </div>
+            </div>
+            <div id="joystickControlMode" class="mobile-control-mode hidden" aria-hidden="true">
+                <div id="joystickBase" class="joystick-base">
+                    <div class="joystick-ring"></div>
+                    <div id="joystickStick" class="joystick-stick"></div>
+                </div>
+            </div>
+            <div id="buttonsControlMode" class="mobile-control-mode hidden" aria-hidden="true">
+                <div class="dpad-diamond">
+                    <button id="btnUp" class="dpad-btn btn-up">▲</button>
+                    <button id="btnLeft" class="dpad-btn btn-left">◄</button>
+                    <button id="btnRight" class="dpad-btn btn-right">►</button>
+                    <button id="btnDown" class="dpad-btn btn-down">▼</button>
+                </div>
+            </div>
         </div>
         <div class="mobile-actions">
             <button id="mobilePauseButton" class="action-btn-circle btn-yellow-glow">PAUSA</button>
-            <div class="mobile-hint" data-touch-text="TOCÁ LA CRUCETA • BOTÓN PAUSA" data-desktop-text="TOCÁ LA CRUCETA • ESC PAUSA">TOCÁ LA CRUCETA • ESC PAUSA</div>
+            <div id="mobileHint" class="mobile-hint" data-touch-text="SWIPE EN GRILLA • BOTÓN PAUSA" data-desktop-text="ESC PAUSA • TECLAS FLECHA / WASD">ESC PAUSA • TECLAS FLECHA / WASD</div>
         </div>
     </div>
 

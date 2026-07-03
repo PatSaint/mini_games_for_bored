@@ -30,6 +30,16 @@ const nicknameInput = document.getElementById('nicknameInput');
 const leaderboardStart = document.getElementById('leaderboardStart');
 const leaderboardPause = document.getElementById('leaderboardPause');
 const leaderboardGameOver = document.getElementById('leaderboardGameOver');
+const controlModeInputs = Array.from(document.querySelectorAll('input[name="mobileControlMode"]'));
+const controlGuideKey = document.getElementById('controlGuideKey');
+const controlGuidePrimary = document.getElementById('controlGuidePrimary');
+const controlGuideSecondary = document.getElementById('controlGuideSecondary');
+const mobileHint = document.getElementById('mobileHint');
+const mobileController = document.getElementById('mobileController');
+const swipeControlMode = document.getElementById('swipeControlMode');
+const joystickControlMode = document.getElementById('joystickControlMode');
+const buttonsControlMode = document.getElementById('buttonsControlMode');
+const joystickBase = document.getElementById('joystickBase');
 
 // Botones
 const startButton = document.getElementById('startButton');
@@ -48,6 +58,15 @@ const STATES = {
     RESIZED: 'RESIZED'
 };
 let currentState = STATES.START;
+
+const CONTROL_MODES = {
+    SWIPE: 'swipe',
+    JOYSTICK: 'joystick',
+    BUTTONS: 'buttons'
+};
+const CONTROL_MODE_STORAGE_KEY = 'neonSnakeMobileControlMode';
+const isTouchDevice = Boolean(window.BORED_DEVICE?.isTouchDevice);
+let currentMobileControlMode = loadMobileControlMode();
 
 // Configuración de la Rejilla y Dimensiones
 const TARGET_CELL_SIZE = 25; // Tamaño objetivo en píxeles de cada celda
@@ -94,6 +113,33 @@ function sanitizeNickname(value) {
     return uiHelper?.normalizeNickname(value) || '';
 }
 
+function normalizeControlMode(value) {
+    return Object.values(CONTROL_MODES).includes(value) ? value : CONTROL_MODES.SWIPE;
+}
+
+function loadMobileControlMode() {
+    try {
+        return normalizeControlMode(localStorage.getItem(CONTROL_MODE_STORAGE_KEY));
+    } catch {
+        return CONTROL_MODES.SWIPE;
+    }
+}
+
+function saveMobileControlMode(mode) {
+    try {
+        localStorage.setItem(CONTROL_MODE_STORAGE_KEY, mode);
+    } catch {
+        // no-op
+    }
+}
+
+function setDirection(inputDir) {
+    if (!inputDir || currentState !== STATES.PLAYING) return;
+    if ((inputDir.x !== 0 && dir.x === 0) || (inputDir.y !== 0 && dir.y === 0)) {
+        nextDir = inputDir;
+    }
+}
+
 function loadTopScores() {
     try {
         const parsed = JSON.parse(localStorage.getItem('neonSnakeTop10') || '[]');
@@ -137,9 +183,10 @@ function updateGridDimensions() {
     const width = window.innerWidth;
     let height = window.innerHeight;
     
-    // Si el ancho es móvil, dejamos espacio para el mando de neón a la altura del canvas
-    if (width <= 768) {
-        height -= 170; // 150px de control + 20px margen
+    // Si el ancho es móvil, dejamos espacio para el modo táctil activo
+    if (width <= 768 && isTouchDevice && mobileController) {
+        const reservedHeight = Math.ceil(mobileController.getBoundingClientRect().height || 150);
+        height -= reservedHeight + 20;
     }
     
     // Adaptar canvas a resolución de pantalla
@@ -195,6 +242,90 @@ window.addEventListener('resize', () => {
     }
 });
 
+function getControlModeCopy(mode) {
+    const activeMode = normalizeControlMode(mode);
+    return {
+        [CONTROL_MODES.SWIPE]: {
+            guideKey: 'SWIPE',
+            guidePrimaryTouch: 'Deslizá sobre la grilla para cambiar de dirección',
+            guideSecondaryTouch: 'Pausa táctica abajo • podés cambiar el modo desde este menú',
+            hintTouch: 'SWIPE EN GRILLA • BOTÓN PAUSA'
+        },
+        [CONTROL_MODES.JOYSTICK]: {
+            guideKey: 'JOYSTICK',
+            guidePrimaryTouch: 'Arrastrá el stick virtual y la serpiente resuelve a 4 direcciones',
+            guideSecondaryTouch: 'Soltá para recentrar • cambiá el modo cuando quieras',
+            hintTouch: 'JOYSTICK + PAUSA'
+        },
+        [CONTROL_MODES.BUTTONS]: {
+            guideKey: 'BOTONES',
+            guidePrimaryTouch: 'Usá la cruceta táctil clásica para moverte',
+            guideSecondaryTouch: 'Cada toque marca la próxima dirección válida',
+            hintTouch: 'CRUCETA + PAUSA'
+        }
+    }[activeMode];
+}
+
+function updateControlModeCopy(mode = currentMobileControlMode) {
+    const copy = getControlModeCopy(mode);
+    if (!copy) return;
+
+    if (controlGuideKey) {
+        controlGuideKey.textContent = isTouchDevice ? copy.guideKey : '▲ ▼ ◄ ►';
+    }
+    if (controlGuidePrimary) {
+        controlGuidePrimary.textContent = isTouchDevice ? copy.guidePrimaryTouch : 'o W A S D para moverte';
+    }
+    if (controlGuideSecondary) {
+        controlGuideSecondary.textContent = isTouchDevice
+            ? copy.guideSecondaryTouch
+            : 'ESC pausa • en móvil elegís swipe, joystick o botones';
+    }
+    if (mobileHint) {
+        mobileHint.textContent = isTouchDevice ? copy.hintTouch : 'ESC PAUSA • TECLAS FLECHA / WASD';
+    }
+}
+
+function syncControlModeInputs(mode = currentMobileControlMode) {
+    controlModeInputs.forEach((input) => {
+        input.checked = input.value === mode;
+    });
+}
+
+function updateMobileControlVisibility(mode = currentMobileControlMode) {
+    const views = {
+        [CONTROL_MODES.SWIPE]: swipeControlMode,
+        [CONTROL_MODES.JOYSTICK]: joystickControlMode,
+        [CONTROL_MODES.BUTTONS]: buttonsControlMode
+    };
+
+    Object.entries(views).forEach(([viewMode, element]) => {
+        if (!element) return;
+        const isActive = viewMode === mode;
+        element.classList.toggle('hidden', !isActive);
+        element.setAttribute('aria-hidden', String(!isActive));
+    });
+}
+
+function applyMobileControlMode(mode, options = {}) {
+    currentMobileControlMode = normalizeControlMode(mode);
+    swipeState.pointerId = null;
+    if (currentMobileControlMode !== CONTROL_MODES.JOYSTICK) {
+        resetJoystick();
+    }
+    syncControlModeInputs(currentMobileControlMode);
+    updateMobileControlVisibility(currentMobileControlMode);
+    updateControlModeCopy(currentMobileControlMode);
+
+    if (options.persist !== false) {
+        saveMobileControlMode(currentMobileControlMode);
+    }
+
+    if (options.resize !== false) {
+        updateGridDimensions();
+    }
+}
+
 // --- LÓGICA DE CONTROL ---
 
 const KEY_MAP = {
@@ -220,10 +351,7 @@ window.addEventListener('keydown', (e) => {
     if (currentState === STATES.PLAYING) {
         const inputDir = KEY_MAP[e.code];
         if (inputDir) {
-            // Prevenir girar 180 grados directamente (autocolisión)
-            if ((inputDir.x !== 0 && dir.x === 0) || (inputDir.y !== 0 && dir.y === 0)) {
-                nextDir = inputDir;
-            }
+            setDirection(inputDir);
         }
         
         // Pausar con Escape
@@ -261,6 +389,14 @@ mobilePauseButton.addEventListener('click', () => {
     } else if (currentState === STATES.PAUSED) {
         resumeGame();
     }
+});
+
+controlModeInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+        if (input.checked) {
+            applyMobileControlMode(input.value);
+        }
+    });
 });
 
 // --- ACCIONES DEL JUEGO ---
@@ -704,12 +840,7 @@ const btnLeft = document.getElementById('btnLeft');
 const btnRight = document.getElementById('btnRight');
 
 function handleTouchDirection(newDir) {
-    if (currentState === STATES.PLAYING) {
-        // Prevenir girar 180 grados directamente (autocolisión)
-        if ((newDir.x !== 0 && dir.x === 0) || (newDir.y !== 0 && dir.y === 0)) {
-            nextDir = newDir;
-        }
-    }
+    setDirection(newDir);
 }
 
 // Bindeo de eventos táctiles y mousedown (fallback)
@@ -729,3 +860,129 @@ bindTouchButton(btnUp, { x: 0, y: -1 });
 bindTouchButton(btnDown, { x: 0, y: 1 });
 bindTouchButton(btnLeft, { x: -1, y: 0 });
 bindTouchButton(btnRight, { x: 1, y: 0 });
+
+const swipeState = {
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lastY: 0
+};
+
+function isSwipeModeActive() {
+    return isTouchDevice && currentMobileControlMode === CONTROL_MODES.SWIPE;
+}
+
+function handleSwipeMove(clientX, clientY) {
+    const deltaX = clientX - swipeState.startX;
+    const deltaY = clientY - swipeState.startY;
+    const threshold = 24;
+
+    if (Math.abs(deltaX) < threshold && Math.abs(deltaY) < threshold) {
+        return;
+    }
+
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        handleTouchDirection({ x: deltaX > 0 ? 1 : -1, y: 0 });
+    } else {
+        handleTouchDirection({ x: 0, y: deltaY > 0 ? 1 : -1 });
+    }
+
+    swipeState.startX = clientX;
+    swipeState.startY = clientY;
+}
+
+canvas.addEventListener('pointerdown', (event) => {
+    if (!isSwipeModeActive() || currentState !== STATES.PLAYING) return;
+    if (event.pointerType === 'mouse') return;
+    swipeState.pointerId = event.pointerId;
+    swipeState.startX = event.clientX;
+    swipeState.startY = event.clientY;
+    swipeState.lastX = event.clientX;
+    swipeState.lastY = event.clientY;
+});
+
+canvas.addEventListener('pointermove', (event) => {
+    if (!isSwipeModeActive() || swipeState.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    swipeState.lastX = event.clientX;
+    swipeState.lastY = event.clientY;
+    handleSwipeMove(event.clientX, event.clientY);
+}, { passive: false });
+
+function resetSwipeState(pointerId) {
+    if (swipeState.pointerId !== pointerId) return;
+    swipeState.pointerId = null;
+}
+
+canvas.addEventListener('pointerup', (event) => {
+    if (isSwipeModeActive() && swipeState.pointerId === event.pointerId) {
+        handleSwipeMove(event.clientX, event.clientY);
+    }
+    resetSwipeState(event.pointerId);
+});
+
+canvas.addEventListener('pointercancel', (event) => resetSwipeState(event.pointerId));
+
+const joystickState = {
+    pointerId: null,
+    maxOffset: 38
+};
+
+function resetJoystick() {
+    joystickState.pointerId = null;
+    if (joystickBase) {
+        joystickBase.style.setProperty('--stick-x', '0px');
+        joystickBase.style.setProperty('--stick-y', '0px');
+    }
+}
+
+function handleJoystickMove(clientX, clientY) {
+    if (!joystickBase) return;
+    const rect = joystickBase.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const rawX = clientX - centerX;
+    const rawY = clientY - centerY;
+    const distance = Math.hypot(rawX, rawY);
+    const limitedDistance = Math.min(distance, joystickState.maxOffset);
+    const angle = Math.atan2(rawY, rawX);
+    const offsetX = distance ? Math.cos(angle) * limitedDistance : 0;
+    const offsetY = distance ? Math.sin(angle) * limitedDistance : 0;
+
+    joystickBase.style.setProperty('--stick-x', `${offsetX}px`);
+    joystickBase.style.setProperty('--stick-y', `${offsetY}px`);
+
+    if (distance < 18) return;
+
+    if (Math.abs(rawX) > Math.abs(rawY)) {
+        handleTouchDirection({ x: rawX > 0 ? 1 : -1, y: 0 });
+    } else {
+        handleTouchDirection({ x: 0, y: rawY > 0 ? 1 : -1 });
+    }
+}
+
+joystickBase?.addEventListener('pointerdown', (event) => {
+    if (!isTouchDevice || currentMobileControlMode !== CONTROL_MODES.JOYSTICK || currentState !== STATES.PLAYING) return;
+    if (event.pointerType === 'mouse') return;
+    event.preventDefault();
+    joystickState.pointerId = event.pointerId;
+    joystickBase.setPointerCapture?.(event.pointerId);
+    handleJoystickMove(event.clientX, event.clientY);
+});
+
+joystickBase?.addEventListener('pointermove', (event) => {
+    if (joystickState.pointerId !== event.pointerId || currentMobileControlMode !== CONTROL_MODES.JOYSTICK) return;
+    event.preventDefault();
+    handleJoystickMove(event.clientX, event.clientY);
+}, { passive: false });
+
+function releaseJoystick(pointerId) {
+    if (joystickState.pointerId !== pointerId) return;
+    resetJoystick();
+}
+
+joystickBase?.addEventListener('pointerup', (event) => releaseJoystick(event.pointerId));
+joystickBase?.addEventListener('pointercancel', (event) => releaseJoystick(event.pointerId));
+
+applyMobileControlMode(currentMobileControlMode, { resize: false });
