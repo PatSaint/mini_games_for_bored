@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Buscaminas | Juego Retro-Moderno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #000;
+            --panel-bg: rgba(10, 10, 15, 0.78);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --neon-yellow: #ffcc00;
+            --neon-cyan: #00f0ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --glow-yellow: 0 0 10px rgba(255,204,0,.6), 0 0 20px rgba(255,204,0,.3);
+            --glow-cyan: 0 0 10px rgba(0,240,255,.6), 0 0 20px rgba(0,240,255,.3);
+            --glow-pink: 0 0 10px rgba(255,0,127,.6), 0 0 20px rgba(255,0,127,.3);
+            --glow-green: 0 0 10px rgba(57,255,20,.6), 0 0 20px rgba(57,255,20,.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body { background: var(--bg-color); color: #fff; font-family: 'Outfit', sans-serif; overflow: hidden; width: 100vw; height: 100vh; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 84px; }
+        .back-btn, .branding { position: absolute; top: 24px; z-index: 50; }
+        .back-btn { left: 24px; text-decoration: none; font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: rgba(255,255,255,.45); background: var(--panel-bg); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 12px; transition: .2s ease; }
+        .back-btn:hover { color: var(--neon-yellow); border-color: var(--neon-yellow); box-shadow: var(--glow-yellow); transform: translateY(-2px); }
+        .branding { right: 24px; font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 900; letter-spacing: 2px; color: var(--neon-cyan); text-shadow: var(--glow-cyan); display: flex; gap: 6px; align-items: center; }
+        .branding::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--neon-cyan); box-shadow: var(--glow-cyan); }
+        #hud { margin-bottom: 18px; z-index: 10; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; padding: 10px 18px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 16px; }
+        .hud-panel { display: flex; flex-direction: column; align-items: center; min-width: 82px; }
+        .hud-label { font-size: 9px; color: rgba(255,255,255,.45); letter-spacing: 1px; }
+        .hud-val { font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700; }
+        .val-mines { color: var(--neon-pink); text-shadow: var(--glow-pink); }
+        .val-flags { color: var(--neon-cyan); text-shadow: var(--glow-cyan); }
+        .val-dim { color: var(--neon-yellow); text-shadow: var(--glow-yellow); }
+        .val-state { color: var(--neon-green); text-shadow: var(--glow-green); }
+        #boardContainer { z-index: 5; display: flex; justify-content: center; align-items: center; max-width: 96vw; max-height: 72vh; }
+        #minesCanvas { background: #000; border: 2px solid rgba(255,255,255,.08); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,.6); display: block; cursor: pointer; touch-action: none; }
+        #mobileControls { margin-top: 14px; display: flex; gap: 10px; z-index: 10; flex-wrap: wrap; justify-content: center; }
+        .tool-btn { background: var(--panel-bg); border: 1px solid var(--border-color); color: rgba(255,255,255,.65); font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 10px 16px; border-radius: 12px; cursor: pointer; transition: .2s ease; }
+        .tool-btn.active { color: var(--neon-cyan); border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); }
+        .overlay-screen { position: absolute; inset: 0; background: rgba(0,0,0,.86); backdrop-filter: blur(8px); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 24px; }
+        .hidden { display: none !important; }
+        .menu-content { background: var(--panel-bg); border: 1px solid var(--border-color); padding: 30px; border-radius: 24px; max-width: 580px; width: min(100%, 580px); display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
+        .game-title { font-family: 'Orbitron', sans-serif; font-size: 34px; font-weight: 900; color: var(--neon-yellow); text-shadow: var(--glow-yellow); text-align: center; line-height: 1.1; }
+        .game-title span { color: var(--neon-pink); text-shadow: var(--glow-pink); }
+        .game-subtitle { text-align: center; font-size: 14px; color: rgba(255,255,255,.68); line-height: 1.5; }
+        .form-grid, .controls-guide, .stats-preview, .scoreboard, .quick-links { width: 100%; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 14px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .field { display: flex; flex-direction: column; gap: 8px; }
+        .field label, .section-title { font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 2px; font-weight: 700; color: var(--neon-yellow); }
+        .field input, .field select { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: #fff; font-family: 'Orbitron', sans-serif; font-size: 13px; padding: 13px 14px; }
+        .controls-guide, .stats-preview { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+        .control-row, .preview-item, .score-row { display: flex; justify-content: space-between; gap: 12px; }
+        .control-key, .preview-val { font-family: 'Orbitron', monospace; color: var(--neon-cyan); }
+        .button-row, .quick-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .action-btn, .menu-back-btn, .quick-link { width: 100%; text-decoration: none; text-align: center; background: transparent; color: var(--neon-yellow); border: 2px solid var(--neon-yellow); padding: 14px; border-radius: 12px; font-family: 'Orbitron', sans-serif; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: .2s ease; }
+        .action-btn:hover, .menu-back-btn:hover, .quick-link:hover { background: var(--neon-yellow); color: #000; box-shadow: var(--glow-yellow); }
+        .score-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+        .score-row { font-size: 13px; }
+        .score-rank { width: 28px; color: var(--neon-yellow); font-family: 'Orbitron', monospace; }
+        .score-nick { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .score-points { font-family: 'Orbitron', monospace; color: var(--neon-cyan); }
+        .top-note { font-size: 12px; color: rgba(255,255,255,.56); }
+        @media (max-width: 640px) { .form-grid, .button-row, .quick-links { grid-template-columns: 1fr; } .menu-content { padding: 22px; max-height: calc(100vh - 32px); overflow: auto; } }
+        @media (max-width: 480px) { .back-btn { top: 12px; left: 12px; padding: 6px 12px; font-size: 9px; } .branding { top: 12px; right: 12px; font-size: 10px; } }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">◀ VOLVER</a>
+    <div class="branding">By PatSaint</div>
+
+    <div id="hud">
+        <div class="hud-panel"><span class="hud-label">REJILLA</span><span id="dimDisplay" class="hud-val val-dim">0 x 0</span></div>
+        <div class="hud-panel"><span class="hud-label">MINAS</span><span id="minesDisplay" class="hud-val val-mines">0</span></div>
+        <div class="hud-panel"><span class="hud-label">BANDERAS</span><span id="flagsDisplay" class="hud-val val-flags">0</span></div>
+        <div class="hud-panel"><span class="hud-label">ESTADO</span><span id="stateDisplay" class="hud-val val-state">LISTO</span></div>
+    </div>
+
+    <div id="boardContainer"><canvas id="minesCanvas"></canvas></div>
+    <div id="mobileControls">
+        <button id="btnReveal" class="tool-btn active">REVELAR</button>
+        <button id="btnFlag" class="tool-btn">BANDERA</button>
+        <button id="btnPause" class="tool-btn">PAUSA</button>
+    </div>
+
+    <div id="overlay" class="overlay-screen">
+        <div id="startScreen" class="menu-content">
+            <h1 class="game-title">BUSCA<span>MINAS</span></h1>
+            <p class="game-subtitle">Ahora sí funciona de verdad: primer clic seguro, revelar, banderas, victoria, derrota, pausa y resize sin romper el tablero.</p>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="nickInput">NICKNAME</label>
+                    <input id="nickInput" type="text" maxlength="10" value="PLAYER1" placeholder="PLAYER1">
+                </div>
+                <div class="field">
+                    <label for="levelSelect">NIVEL INICIAL</label>
+                    <select id="levelSelect"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select>
+                </div>
+            </div>
+            <div class="stats-preview">
+                <div class="preview-item"><span>Rejilla</span><span id="previewGrid" class="preview-val">-- x --</span></div>
+                <div class="preview-item"><span>Minas</span><span id="previewMines" class="preview-val">--</span></div>
+                <div class="preview-item"><span>Densidad</span><span id="densityPreview" class="preview-val">--</span></div>
+            </div>
+            <div class="controls-guide">
+                <div class="control-row"><span>PC</span><span class="control-key">CLICK revela / CLICK DERECHO bandera</span></div>
+                <div class="control-row"><span>Touch</span><span class="control-key">Botón REVELAR o BANDERA</span></div>
+                <div class="control-row"><span>Pausa</span><span class="control-key">ESC o botón PAUSA</span></div>
+            </div>
+            <div class="button-row">
+                <button id="startButton" class="action-btn">START</button>
+                <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
+            </div>
+            <div class="quick-links">
+                <a class="quick-link" href="invaders.html">IR A INVADERS</a>
+                <a class="quick-link" href="pong.html">IR A PONG</a>
+            </div>
+            <div class="scoreboard">
+                <div class="section-title">TOP 10 DESACTIVADORES</div>
+                <div id="topScores" class="score-list"></div>
+            </div>
+        </div>
+
+        <div id="pauseScreen" class="menu-content hidden">
+            <h2 class="game-title">PAUSA</h2>
+            <p class="game-subtitle">Quedó todo congelado como corresponde.</p>
+            <div class="controls-guide">
+                <div class="control-row"><span>Nickname</span><span id="pauseNick" class="control-key">PLAYER1</span></div>
+                <div class="control-row"><span>Rejilla</span><span id="pauseGrid" class="control-key">0 x 0</span></div>
+                <div class="control-row"><span>Banderas</span><span id="pauseFlags" class="control-key">0</span></div>
+            </div>
+            <div class="button-row">
+                <button id="resumeButton" class="action-btn">SEGUIR</button>
+                <button id="restartButton" class="action-btn">REINICIAR</button>
+            </div>
+            <div class="quick-links">
+                <a class="quick-link" href="index.html">HOME</a>
+                <a class="quick-link" href="pong.html">OTRO JUEGO</a>
+            </div>
+        </div>
+
+        <div id="endScreen" class="menu-content hidden">
+            <h2 id="endTitle" class="game-title">VICTORIA</h2>
+            <p id="endSubtitle" class="game-subtitle">Buenísimo.</p>
+            <div class="stats-preview">
+                <div class="preview-item"><span>Puntaje</span><span id="finalScore" class="preview-val">0</span></div>
+                <div class="preview-item"><span>Mejor</span><span id="finalBest" class="preview-val">0</span></div>
+                <div class="preview-item"><span>Nivel</span><span id="finalLevel" class="preview-val">1</span></div>
+            </div>
+            <div class="button-row">
+                <button id="playAgainButton" class="action-btn">JUGAR DE NUEVO</button>
+                <button id="menuButton" class="action-btn">MENÚ INICIAL</button>
+            </div>
+            <div class="scoreboard">
+                <div class="section-title">TOP 10 DESACTIVADORES</div>
+                <div id="topScoresEnd" class="score-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('minesCanvas');
+        const ctx = canvas.getContext('2d');
+        const storageKey = 'boredTop10Minesweeper';
+        const overlay = document.getElementById('overlay');
+        const startScreen = document.getElementById('startScreen');
+        const pauseScreen = document.getElementById('pauseScreen');
+        const endScreen = document.getElementById('endScreen');
+        const endTitle = document.getElementById('endTitle');
+        const endSubtitle = document.getElementById('endSubtitle');
+        const dimDisplay = document.getElementById('dimDisplay');
+        const minesDisplay = document.getElementById('minesDisplay');
+        const flagsDisplay = document.getElementById('flagsDisplay');
+        const stateDisplay = document.getElementById('stateDisplay');
+        const nickInput = document.getElementById('nickInput');
+        const levelSelect = document.getElementById('levelSelect');
+        const previewGrid = document.getElementById('previewGrid');
+        const previewMines = document.getElementById('previewMines');
+        const densityPreview = document.getElementById('densityPreview');
+        const topScores = document.getElementById('topScores');
+        const topScoresEnd = document.getElementById('topScoresEnd');
+        const pauseNick = document.getElementById('pauseNick');
+        const pauseGrid = document.getElementById('pauseGrid');
+        const pauseFlags = document.getElementById('pauseFlags');
+        const finalScore = document.getElementById('finalScore');
+        const finalBest = document.getElementById('finalBest');
+        const finalLevel = document.getElementById('finalLevel');
+        const btnReveal = document.getElementById('btnReveal');
+        const btnFlag = document.getElementById('btnFlag');
+
+        const STATES = { START: 'START', PLAYING: 'PLAYING', PAUSED: 'PAUSED', GAMEOVER: 'GAMEOVER', WON: 'WON' };
+        const INPUT_MODES = { REVEAL: 'REVEAL', FLAG: 'FLAG' };
+        let currentState = STATES.START;
+        let currentInputMode = INPUT_MODES.REVEAL;
+        let playerNick = 'PLAYER1';
+        let selectedLevel = 1;
+        let cols = 10, rows = 10, mineCount = 15, cellSize = 34;
+        let grid = [];
+        let flagCount = 0;
+        let revealedSafeCells = 0;
+        let firstClick = true;
+        let particles = [];
+        let bestScore = 0;
+
+        const NUMBER_COLORS = ['', '#00f0ff', '#39ff14', '#ff007f', '#b026ff', '#ff073a', '#ffcc00', '#ff9900', '#ffffff'];
+
+        function sanitizeNick(value) { return (value || 'PLAYER1').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 10) || 'PLAYER1'; }
+        function getTopScores() { try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch { return []; } }
+        function saveTopScore(gameKey, nick, score) {
+            const list = getTopScores();
+            list.push({ nick: sanitizeNick(nick), score: Number(score) || 0, level: selectedLevel, at: Date.now(), gameKey });
+            list.sort((a, b) => b.score - a.score || b.level - a.level || a.at - b.at);
+            const top10 = list.slice(0, 10);
+            localStorage.setItem(storageKey, JSON.stringify(top10));
+            return top10;
+        }
+        function renderTop10(target, list = getTopScores()) {
+            target.innerHTML = '';
+            if (!list.length) { target.innerHTML = '<div class="top-note">Todavía no hay récords.</div>'; return; }
+            list.forEach((entry, index) => {
+                const row = document.createElement('div');
+                row.className = 'score-row';
+                row.innerHTML = `<span class="score-rank">#${index + 1}</span><span class="score-nick">${entry.nick}</span><span class="score-points">${entry.score}</span>`;
+                target.appendChild(row);
+            });
+        }
+        function updateBestScore() { bestScore = getTopScores()[0]?.score || 0; finalBest.textContent = bestScore; }
+        function showPanel(panel) { overlay.classList.remove('hidden'); [startScreen, pauseScreen, endScreen].forEach(node => node.classList.add('hidden')); panel.classList.remove('hidden'); }
+
+        function resizeGrid(useCurrentBoard = false) {
+            if (!useCurrentBoard) {
+                selectedLevel = Number(levelSelect.value || 1);
+                cols = Math.max(8, Math.min(20, 8 + selectedLevel));
+                rows = Math.max(8, Math.min(18, 8 + Math.floor(selectedLevel * 0.8)));
+                const density = 0.12 + selectedLevel * 0.012;
+                mineCount = Math.min(cols * rows - 9, Math.max(8, Math.floor(cols * rows * density)));
+                densityPreview.textContent = `${Math.round(density * 100)}%`;
+            }
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const maxBoardW = Math.min(width - 30, 900);
+            const maxBoardH = Math.min(height - 230, 760);
+            cellSize = Math.max(18, Math.min(38, Math.floor(maxBoardW / cols), Math.floor(maxBoardH / rows)));
+            canvas.width = cols * cellSize;
+            canvas.height = rows * cellSize;
+            dimDisplay.textContent = `${cols} x ${rows}`;
+            minesDisplay.textContent = mineCount;
+            flagsDisplay.textContent = flagCount;
+            previewGrid.textContent = `${cols} x ${rows}`;
+            previewMines.textContent = `${mineCount}`;
+            pauseGrid.textContent = `${cols} x ${rows}`;
+        }
+
+        function initGrid() {
+            grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ({ mine: false, revealed: false, flagged: false, neighborMines: 0, exploded: false })));
+            flagCount = 0;
+            revealedSafeCells = 0;
+            firstClick = true;
+            flagsDisplay.textContent = '0';
+            pauseFlags.textContent = '0';
+        }
+
+        function countNeighborMines(row, col) {
+            let count = 0;
+            for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                const nr = row + dr, nc = col + dc;
+                if ((dr || dc) && nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc].mine) count++;
+            }
+            return count;
+        }
+
+        function plantMines(excludeRow, excludeCol) {
+            let planted = 0;
+            while (planted < mineCount) {
+                const r = Math.floor(Math.random() * rows), c = Math.floor(Math.random() * cols);
+                const protectedStart = Math.abs(r - excludeRow) <= 1 && Math.abs(c - excludeCol) <= 1;
+                if (!grid[r][c].mine && !protectedStart) { grid[r][c].mine = true; planted++; }
+            }
+            for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (!grid[r][c].mine) grid[r][c].neighborMines = countNeighborMines(r, c);
+        }
+
+        function startGame() {
+            playerNick = sanitizeNick(nickInput.value);
+            nickInput.value = playerNick;
+            currentState = STATES.PLAYING;
+            stateDisplay.textContent = 'JUGANDO';
+            pauseNick.textContent = playerNick;
+            resizeGrid();
+            initGrid();
+            particles = [];
+            overlay.classList.add('hidden');
+        }
+
+        function pauseGame() {
+            if (currentState !== STATES.PLAYING) return;
+            currentState = STATES.PAUSED;
+            stateDisplay.textContent = 'PAUSA';
+            pauseFlags.textContent = flagCount;
+            showPanel(pauseScreen);
+        }
+        function resumeGame() { if (currentState !== STATES.PAUSED) return; currentState = STATES.PLAYING; stateDisplay.textContent = 'JUGANDO'; overlay.classList.add('hidden'); }
+
+        function toggleFlag(r, c) {
+            const cell = grid[r][c];
+            if (!cell || cell.revealed) return;
+            cell.flagged = !cell.flagged;
+            flagCount += cell.flagged ? 1 : -1;
+            flagsDisplay.textContent = `${flagCount}`;
+            pauseFlags.textContent = `${flagCount}`;
+            spawnSparks(c * cellSize + cellSize / 2, r * cellSize + cellSize / 2, cell.flagged ? '#00f0ff' : '#ffffff', 4);
+        }
+
+        function revealCell(r, c) {
+            const cell = grid[r]?.[c];
+            if (!cell || cell.revealed || cell.flagged) return;
+            if (firstClick) { firstClick = false; plantMines(r, c); }
+            cell.revealed = true;
+            if (!cell.mine) revealedSafeCells++;
+            spawnSparks(c * cellSize + cellSize / 2, r * cellSize + cellSize / 2, '#ffffff', 5);
+            if (cell.mine) { cell.exploded = true; triggerGameOver(false, r, c); return; }
+            if (cell.neighborMines === 0) {
+                for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if (dr || dc) revealCell(r + dr, c + dc);
+            }
+            checkWin();
+        }
+
+        function checkWin() {
+            if (revealedSafeCells === cols * rows - mineCount) triggerGameOver(true);
+        }
+
+        function computeScore(won) {
+            const safeCells = cols * rows - mineCount;
+            return Math.max(0, (revealedSafeCells * 10) + (won ? selectedLevel * 50 : 0) + Math.max(0, safeCells - flagCount * 2));
+        }
+
+        function triggerGameOver(won, boomRow = 0, boomCol = 0) {
+            currentState = won ? STATES.WON : STATES.GAMEOVER;
+            stateDisplay.textContent = won ? 'GANASTE' : 'PERDISTE';
+            for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (grid[r][c].mine) grid[r][c].revealed = true;
+            if (!won) spawnSparks(boomCol * cellSize + cellSize / 2, boomRow * cellSize + cellSize / 2, '#ff073a', 32);
+            const score = computeScore(won);
+            const list = saveTopScore('minesweeper', playerNick, score);
+            updateBestScore();
+            endTitle.textContent = won ? '¡VICTORIA!' : 'FIN DEL JUEGO';
+            endSubtitle.textContent = won ? 'Limpiaste el tablero completo, capo.' : 'Pisaste una mina, pero el juego ya NO está roto.';
+            finalScore.textContent = `${score}`;
+            finalLevel.textContent = `${selectedLevel}`;
+            renderTop10(topScores, list);
+            renderTop10(topScoresEnd, list);
+            setTimeout(() => showPanel(endScreen), won ? 500 : 350);
+        }
+
+        function spawnSparks(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2, speed = 0.8 + Math.random() * 3.4;
+                particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, color, size: 1.5 + Math.random() * 2.1, alpha: 1, decay: 0.015 + Math.random() * 0.02 });
+            }
+        }
+
+        function drawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
+                if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+                ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.shadowBlur = p.size * 2; ctx.shadowColor = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = grid[r]?.[c];
+                    if (!cell) continue;
+                    const px = c * cellSize, py = r * cellSize;
+                    ctx.save();
+                    if (cell.revealed) {
+                        ctx.fillStyle = cell.exploded ? 'rgba(255,7,58,.15)' : 'rgba(255,255,255,.03)';
+                        ctx.strokeStyle = 'rgba(255,255,255,.08)';
+                        ctx.beginPath(); ctx.roundRect(px + 1, py + 1, cellSize - 2, cellSize - 2, 4); ctx.fill(); ctx.stroke();
+                        if (cell.mine) {
+                            ctx.shadowBlur = 10; ctx.shadowColor = cell.exploded ? '#ffcc00' : '#ff073a'; ctx.fillStyle = '#ff073a';
+                            ctx.beginPath(); ctx.arc(px + cellSize / 2, py + cellSize / 2, cellSize * 0.28, 0, Math.PI * 2); ctx.fill();
+                            ctx.shadowBlur = 0; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(px + cellSize / 2, py + cellSize / 2, cellSize * 0.12, 0, Math.PI * 2); ctx.fill();
+                        } else if (cell.neighborMines > 0) {
+                            const numColor = NUMBER_COLORS[cell.neighborMines];
+                            ctx.shadowBlur = 8; ctx.shadowColor = numColor; ctx.fillStyle = numColor; ctx.font = `bold ${Math.floor(cellSize * 0.52)}px Orbitron`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText(cell.neighborMines, px + cellSize / 2, py + cellSize / 2 + 1);
+                        }
+                    } else {
+                        ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.strokeStyle = 'rgba(255,255,255,.15)';
+                        ctx.beginPath(); ctx.roundRect(px + 1.5, py + 1.5, cellSize - 3, cellSize - 3, 6); ctx.fill(); ctx.stroke();
+                        ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.beginPath(); ctx.roundRect(px + cellSize * .25, py + cellSize * .25, cellSize * .5, cellSize * .5, 3); ctx.fill();
+                        if (cell.flagged) {
+                            const cx = px + cellSize / 2, cy = py + cellSize / 2;
+                            ctx.shadowBlur = 8; ctx.shadowColor = '#00f0ff'; ctx.fillStyle = '#00f0ff'; ctx.strokeStyle = '#00f0ff';
+                            ctx.beginPath(); ctx.moveTo(cx - 3, cy + 6); ctx.lineTo(cx - 3, cy - 6); ctx.lineTo(cx + 5, cy - 2); ctx.lineTo(cx - 3, cy + 2); ctx.fill(); ctx.stroke();
+                        }
+                    }
+                    ctx.restore();
+                }
+            }
+            drawParticles();
+        }
+
+        function loop() { draw(); requestAnimationFrame(loop); }
+
+        function setInputMode(mode) {
+            currentInputMode = mode;
+            btnReveal.classList.toggle('active', mode === INPUT_MODES.REVEAL);
+            btnFlag.classList.toggle('active', mode === INPUT_MODES.FLAG);
+        }
+        function getCellFromPointer(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left, y = e.clientY - rect.top;
+            return { c: Math.floor(x / cellSize), r: Math.floor(y / cellSize) };
+        }
+        function handleRevealOrFlag(e, forceFlag = false) {
+            if (currentState !== STATES.PLAYING) return;
+            const { r, c } = getCellFromPointer(e);
+            if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+            if (forceFlag || currentInputMode === INPUT_MODES.FLAG) toggleFlag(r, c); else revealCell(r, c);
+        }
+
+        let lastTouchOpen = 0;
+
+        window.addEventListener('resize', () => {
+            resizeGrid(currentState !== STATES.START);
+            if (currentState === STATES.START) initGrid();
+        });
+        levelSelect.addEventListener('change', () => { resizeGrid(); if (currentState === STATES.START) initGrid(); });
+        nickInput.addEventListener('input', () => { nickInput.value = sanitizeNick(nickInput.value); });
+        btnReveal.addEventListener('click', () => setInputMode(INPUT_MODES.REVEAL));
+        btnFlag.addEventListener('click', () => setInputMode(INPUT_MODES.FLAG));
+        document.getElementById('btnPause').addEventListener('click', pauseGame);
+        canvas.addEventListener('click', (e) => {
+            if (Date.now() - lastTouchOpen < 350) return;
+            handleRevealOrFlag(e, false);
+        });
+        canvas.addEventListener('contextmenu', (e) => { e.preventDefault(); handleRevealOrFlag(e, true); });
+        canvas.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'touch' && currentState === STATES.PLAYING) {
+                lastTouchOpen = Date.now();
+                handleRevealOrFlag(e, false);
+            }
+        });
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Escape') { e.preventDefault(); if (currentState === STATES.PAUSED) resumeGame(); else pauseGame(); }
+        });
+        document.getElementById('startButton').addEventListener('click', startGame);
+        document.getElementById('resumeButton').addEventListener('click', resumeGame);
+        document.getElementById('restartButton').addEventListener('click', startGame);
+        document.getElementById('playAgainButton').addEventListener('click', startGame);
+        document.getElementById('menuButton').addEventListener('click', () => { currentState = STATES.START; stateDisplay.textContent = 'LISTO'; showPanel(startScreen); });
+
+        updateBestScore();
+        renderTop10(topScores);
+        renderTop10(topScoresEnd);
+        resizeGrid();
+        initGrid();
+        loop();
+    </script>
+</body>
+</html>

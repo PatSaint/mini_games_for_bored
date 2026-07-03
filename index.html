@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Hub | Antiaurrimiento</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Variables */
+        :root {
+            --bg-color: #020204;
+            --panel-bg: rgba(10, 10, 15, 0.75);
+            --border-color: rgba(255, 255, 255, 0.05);
+            
+            --neon-cyan: #00f0ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --neon-purple: #b026ff;
+            --neon-yellow: #ffcc00;
+            --neon-orange: #ff9900;
+            
+            --glow-cyan: 0 0 12px rgba(0, 240, 255, 0.4), 0 0 25px rgba(0, 240, 255, 0.15);
+            --glow-pink: 0 0 12px rgba(255, 0, 127, 0.4), 0 0 25px rgba(255, 0, 127, 0.15);
+            --glow-green: 0 0 12px rgba(57, 255, 20, 0.4), 0 0 25px rgba(57, 255, 20, 0.15);
+            --glow-purple: 0 0 12px rgba(176, 38, 255, 0.4), 0 0 25px rgba(176, 38, 255, 0.15);
+            --glow-yellow: 0 0 12px rgba(255, 204, 0, 0.4), 0 0 25px rgba(255, 204, 0, 0.15);
+            --glow-orange: 0 0 12px rgba(255, 153, 0, 0.4), 0 0 25px rgba(255, 153, 0, 0.15);
+        }
+
+        /* General */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.005) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.005) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 80px 20px 40px 20px;
+        }
+
+        /* Sello Neón Top-Left */
+        .branding {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--neon-cyan);
+            text-shadow: var(--glow-cyan);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branding::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: var(--glow-cyan);
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        /* Efectos de Luces de Fondo */
+        .ambient-glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            filter: blur(160px);
+            opacity: 0.07;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow-1 { top: 10%; left: 15%; background: var(--neon-pink); }
+        .glow-2 { bottom: 15%; right: 15%; background: var(--neon-cyan); }
+
+        /* Contenedor */
+        .hub-container {
+            max-width: 1100px;
+            width: 100%;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 36px;
+        }
+
+        /* Cabecera */
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .hub-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffffff 40%, rgba(255, 255, 255, 0.4));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+        }
+
+        .hub-title span {
+            color: var(--neon-pink);
+            text-shadow: var(--glow-pink);
+            -webkit-text-fill-color: initial;
+        }
+
+        .hub-subtitle {
+            font-size: 14px;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 1px;
+        }
+
+        /* Grilla de Juegos Compacta */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+
+        /* Tarjeta de Juego Pequeña y Clicable */
+        .game-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            height: 180px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-top {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .game-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            align-self: flex-start;
+            border: 1px solid currentColor;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #ffffff;
+            transition: transform 0.3s ease;
+        }
+
+        .game-desc {
+            font-size: 11px;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.45);
+            font-weight: 300;
+            margin-top: 4px;
+        }
+
+        .play-indicator {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.2s ease;
+        }
+
+        /* Estilos Neón Individuales por Tarjeta */
+        
+        /* 1. Snake */
+        .card-snake { border-color: rgba(0, 240, 255, 0.15); }
+        .card-snake .game-badge { color: var(--neon-cyan); }
+        .card-snake .play-indicator { color: var(--neon-cyan); }
+        .card-snake:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-cyan);
+            box-shadow: var(--glow-cyan), 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* 2. Tetris */
+        .card-tetris { border-color: rgba(255, 0, 127, 0.15); }
+        .card-tetris .game-badge { color: var(--neon-pink); }
+        .card-tetris .play-indicator { color: var(--neon-pink); }
+        .card-tetris:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-pink);
+            box-shadow: var(--glow-pink), 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 3. Pong */
+        .card-pong { border-color: rgba(57, 255, 20, 0.15); }
+        .card-pong .game-badge { color: var(--neon-green); }
+        .card-pong .play-indicator { color: var(--neon-green); }
+        .card-pong:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-green);
+            box-shadow: var(--glow-green), 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 4. Invaders */
+        .card-invaders { border-color: rgba(176, 38, 255, 0.15); }
+        .card-invaders .game-badge { color: var(--neon-purple); }
+        .card-invaders .play-indicator { color: var(--neon-purple); }
+        .card-invaders:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-purple);
+            box-shadow: var(--glow-purple), 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 5. Buscaminas */
+        .card-mines { border-color: rgba(255, 204, 0, 0.15); }
+        .card-mines .game-badge { color: var(--neon-yellow); }
+        .card-mines .play-indicator { color: var(--neon-yellow); }
+        .card-mines:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-yellow);
+            box-shadow: var(--glow-yellow), 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 6. Flappy */
+        .card-flappy { border-color: rgba(255, 153, 0, 0.15); }
+        .card-flappy .game-badge { color: var(--neon-orange); }
+        .card-flappy .play-indicator { color: var(--neon-orange); }
+        .card-flappy:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-orange);
+            box-shadow: var(--glow-orange), 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 7. Breakout */
+        .card-breakout { border-color: rgba(0, 240, 255, 0.15); }
+        .card-breakout .game-badge { color: var(--neon-cyan); }
+        .card-breakout .play-indicator { color: var(--neon-cyan); }
+        .card-breakout:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-cyan);
+            box-shadow: var(--glow-cyan), 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 8. 2048 */
+        .card-2048 { border-color: rgba(57, 255, 20, 0.15); }
+        .card-2048 .game-badge { color: var(--neon-green); }
+        .card-2048 .play-indicator { color: var(--neon-green); }
+        .card-2048:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-green);
+            box-shadow: var(--glow-green), 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 9. Asteroids */
+        .card-asteroids { border-color: rgba(255, 0, 127, 0.15); }
+        .card-asteroids .game-badge { color: var(--neon-pink); }
+        .card-asteroids .play-indicator { color: var(--neon-pink); }
+        .card-asteroids:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-pink);
+            box-shadow: var(--glow-pink), 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 10. Simon */
+        .card-simon { border-color: rgba(255, 204, 0, 0.15); }
+        .card-simon .game-badge { color: var(--neon-yellow); }
+        .card-simon .play-indicator { color: var(--neon-yellow); }
+        .card-simon:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-yellow);
+            box-shadow: var(--glow-yellow), 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Efecto al hacer hover general */
+        .game-card:hover .play-indicator {
+            transform: translateX(4px);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 24px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 2px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        @keyframes pulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+
+        /* Adaptabilidad */
+        @media (max-width: 600px) {
+            .branding {
+                position: static;
+                margin-bottom: 24px;
+            }
+            body {
+                padding-top: 40px;
+            }
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+            .game-card {
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sello neón -->
+    <div class="branding">By PatSaint</div>
+
+    <!-- Luces de fondo -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+
+    <div class="hub-container">
+        <!-- Cabecera -->
+        <header class="header">
+            <h1 class="hub-title">ARCADE<span>HUB</span></h1>
+            <p class="hub-subtitle">Selecciona un juego para combatir el aburrimiento</p>
+        </header>
+
+        <!-- Grilla de Juegos -->
+        <main class="games-grid">
+            
+            <!-- 1. Gusanito (Snake) -->
+            <a href="snake.html" class="game-card card-snake">
+                <div class="card-top">
+                    <span class="game-badge">ONLINE</span>
+                    <h2 class="game-title">NEON SNAKE</h2>
+                    <p class="game-desc">Gusanito cibernético de arcoíris. Adapta su tamaño a tu ventana.</p>
+                </div>
+                <div class="play-indicator">JUGAR ➔</div>
+            </a>
+
+            <!-- 2. Tetris -->
+            <a href="tetris.html" class="game-card card-tetris">
+                <div class="card-top">
+                    <span class="game-badge">ONLINE</span>
+                    <h2 class="game-title">NEON TETRIS</h2>
+                    <p class="game-desc">Apila bloques y limpia líneas con destellos y partículas neón.</p>
+                </div>
+                <div class="play-indicator">JUGAR ➔</div>
+            </a>
+
+            <!-- 3. Pong -->
+            <a href="pong.html" class="game-card card-pong">
+                <div class="card-top">
+                    <span class="game-badge">ONLINE</span>
+                    <h2 class="game-title">NEON PONG</h2>
+                    <p class="game-desc">Clásico tenis de palas. Juega contra la IA o contra un amigo local.</p>
+                </div>
+                <div class="play-indicator">JUGAR ➔</div>
+            </a>
+
+            <!-- 4. Space Invaders -->
+            <a href="invaders.html" class="game-card card-invaders">
+                <div class="card-top">
+                    <span class="game-badge">ONLINE</span>
+                    <h2 class="game-title">SPACE INVADERS</h2>
+                    <p class="game-desc">Defiende la galaxia de flotas de aliens. El ancho se adapta al navegador.</p>
+                </div>
+                <div class="play-indicator">JUGAR ➔</div>
+            </a>
+
+            <!-- 5. Buscaminas -->
+            <a href="minesweeper.html" class="game-card card-mines">
+                <div class="card-top">
+                    <span class="game-badge">ONLINE</span>
+                    <h2 class="game-title">BUSCAMINAS</h2>
+                    <p class="game-desc">La rejilla y minas se calculan por el tamaño de tu ventana.</p>
+                </div>
+                <div class="play-indicator">JUGAR ➔</div>
+            </a>
+
+            <!-- 6. Flappy Neon -->
+            <a href="flappy.html" class="game-card card-flappy">
+                <div class="card-top">
+                    <span class="game-badge">ONLINE</span>
+                    <h2 class="game-title">FLAPPY NEON</h2>
+                    <p class="game-desc">Esquiva los pilares neón pulsando la barra espaciadora.</p>
+                </div>
+                <div class="play-indicator">JUGAR ➔</div>
+            </a>
+
+            <!-- 7. Breakout -->
+            <a href="breakout.html" class="game-card card-breakout">
+                <div class="card-top">
+                    <span class="game-badge">ONLINE</span>
+                    <h2 class="game-title">NEON BREAKOUT</h2>
+                    <p class="game-desc">Rompe ladrillos luminosos y recoge bonificaciones.</p>
+                </div>
+                <div class="play-indicator">JUGAR ➔</div>
+            </a>
+
+            <!-- 8. 2048 -->
+            <a href="2048.html" class="game-card card-2048">
+                <div class="card-top">
+                    <span class="game-badge">ONLINE</span>
+                    <h2 class="game-title">NEON 2048</h2>
+                    <p class="game-desc">Desliza números, combínalos y desbloquea colores.</p>
+                </div>
+                <div class="play-indicator">JUGAR ➔</div>
+            </a>
+
+            <!-- 9. Asteroids -->
+            <a href="asteroids.html" class="game-card card-asteroids">
+                <div class="card-top">
+                    <span class="game-badge">ONLINE</span>
+                    <h2 class="game-title">NEON ASTEROIDS</h2>
+                    <p class="game-desc">Vuela por el espacio y destruye asteroides vectoriales brillantes.</p>
+                </div>
+                <div class="play-indicator">JUGAR ➔</div>
+            </a>
+
+            <!-- 10. Simon -->
+            <a href="simon.html" class="game-card card-simon">
+                <div class="card-top">
+                    <span class="game-badge">ONLINE</span>
+                    <h2 class="game-title">NEON SIMON</h2>
+                    <p class="game-desc">Memoriza y repite los patrones de sonido y color neón.</p>
+                </div>
+                <div class="play-indicator">JUGAR ➔</div>
+            </a>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            HEXAGON ARCADE &copy; 2026
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Tetris | Juego Retro-Moderno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="tetris.css">
+</head>
+<body>
+    <!-- Botón Volver al Menú Principal -->
+    <a href="index.html" class="back-btn">◀ VOLVER</a>
+    <div class="branding">By PatSaint</div>
+
+    <!-- Contenedor Principal del Juego -->
+    <div id="gameContainer">
+        <!-- Tablero del Juego -->
+        <div class="canvas-wrapper">
+            <canvas id="tetrisCanvas"></canvas>
+        </div>
+
+        <!-- Panel Lateral (HUD) -->
+        <div id="sidebar">
+            <!-- Siguiente Pieza -->
+            <div class="sidebar-panel next-panel">
+                <div class="panel-label">SIGUIENTE</div>
+                <div class="next-canvas-wrapper">
+                    <canvas id="nextCanvas" width="100" height="100"></canvas>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="sidebar-panel">
+                <div class="panel-label">PUNTOS</div>
+                <div id="score" class="panel-value">0</div>
+            </div>
+
+            <div class="sidebar-panel">
+                <div class="panel-label">RÉCORD</div>
+                <div id="highScore" class="panel-value">0</div>
+            </div>
+
+            <div class="sidebar-panel">
+                <div class="panel-label">LÍNEAS</div>
+                <div id="linesDisplay" class="panel-value">0</div>
+            </div>
+
+            <div class="sidebar-panel highlights">
+                <div class="panel-label">NIVEL</div>
+                <div id="levelDisplay" class="panel-value glowing-text-pink">1</div>
+            </div>
+            
+            <!-- Controles Cortos -->
+            <div class="sidebar-panel controls-panel">
+                <div class="panel-label">CONTROLES</div>
+                <div class="mini-control">◄ ► : Mover</div>
+                <div class="mini-control">▲ / W : Rotar</div>
+                <div class="mini-control">▼ / S : Caída Suave</div>
+                <div class="mini-control">Espacio : Caída Rápida</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantallas de Estado (Overlay) -->
+    <div id="overlay" class="overlay-screen">
+        <!-- Pantalla de Inicio -->
+        <div id="startScreen" class="menu-content">
+            <h1 class="game-title neon-text-pink">NEON<br><span class="neon-text-cyan">TETRIS</span></h1>
+            <p class="game-subtitle">Ingresá tu nick, elegí el nivel inicial y apilá bloques con caída calibrada desde el arranque. ESC pausa y en móvil usá el pad táctil.</p>
+            <div class="form-group">
+                <label for="nicknameInput">NICKNAME (MAX 10)</label>
+                <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" autocomplete="off">
+            </div>
+            <div class="level-selector">
+                <label for="levelSelect">NIVEL INICIAL</label>
+                <select id="levelSelect">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                </select>
+            </div>
+            <div class="stats-preview">
+                <div class="preview-item">
+                    <span class="preview-label">Dimensión Ventana:</span>
+                    <span id="windowDim" class="preview-value">-- x --</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">Nivel Inicial:</span>
+                    <span id="levelPreview" class="preview-value glowing-text-pink">--</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">Caída Base:</span>
+                    <span id="speedPreview" class="preview-value glowing-text-pink">--</span>
+                </div>
+            </div>
+            <div class="leaderboard-panel">
+                <div class="leaderboard-title">TOP 10 NEON</div>
+                <div id="leaderboardStart" class="leaderboard-list"></div>
+            </div>
+            <div class="quick-links">
+                <a href="asteroids.html" class="quick-link">ASTEROIDS</a>
+                <a href="simon.html" class="quick-link">SIMON</a>
+                <a href="snake.html" class="quick-link">SNAKE</a>
+            </div>
+            <button id="startButton" class="action-btn btn-pink">PRESIONÁ ESPACIO O TOCÁ PARA INICIAR</button>
+            <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
+        </div>
+
+        <!-- Pantalla de Game Over -->
+        <div id="gameOverScreen" class="menu-content hidden">
+            <h2 class="game-title neon-text-red">FIN DEL JUEGO</h2>
+            <div class="game-over-stats">
+                <div class="stat-box">
+                    <span class="stat-label">Puntaje Final</span>
+                    <span id="finalScore" class="stat-value">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Mejor Puntaje</span>
+                    <span id="finalHighScore" class="stat-value">0</span>
+                </div>
+            </div>
+            <div class="leaderboard-panel compact-panel">
+                <div class="leaderboard-title">MEJORES PARTIDAS</div>
+                <div id="leaderboardGameOver" class="leaderboard-list"></div>
+            </div>
+            <div class="quick-links">
+                <a href="asteroids.html" class="quick-link">ASTEROIDS</a>
+                <a href="simon.html" class="quick-link">SIMON</a>
+                <a href="snake.html" class="quick-link">SNAKE</a>
+            </div>
+            <p class="restart-prompt">Presioná <span class="highlight-key">ESPACIO</span> para volver a intentar</p>
+            <button id="restartButton" class="action-btn btn-red">JUGAR DE NUEVO</button>
+        </div>
+
+        <!-- Pantalla de Pausa -->
+        <div id="pauseScreen" class="menu-content hidden">
+            <h2 class="game-title neon-text-yellow">PAUSA</h2>
+            <p class="pause-instruction">Presioná <span class="highlight-key">ESC</span> para continuar o elegí tu próximo paso.</p>
+            <div class="leaderboard-panel compact-panel">
+                <div class="leaderboard-title">TOP 10</div>
+                <div id="leaderboardPause" class="leaderboard-list"></div>
+            </div>
+            <div class="quick-links">
+                <a href="asteroids.html" class="quick-link">ASTEROIDS</a>
+                <a href="simon.html" class="quick-link">SIMON</a>
+                <a href="snake.html" class="quick-link">SNAKE</a>
+            </div>
+            <button id="resumeButton" class="action-btn btn-yellow">REANUDAR</button>
+            <button id="pauseRestartButton" class="action-btn btn-red">REINICIAR PARTIDA</button>
+            <a href="index.html" class="menu-back-btn">IR AL HOME</a>
+        </div>
+
+        <!-- Pantalla de Redimensionamiento -->
+        <div id="resizeScreen" class="menu-content hidden">
+            <h2 class="game-title neon-text-blue">VENTANA MODIFICADA</h2>
+            <p class="game-subtitle">La rejilla y el nivel han sido adaptados al nuevo tamaño.</p>
+            <div class="stats-preview">
+                <div class="preview-item">
+                    <span class="preview-label">Nueva Dimensión Ventana:</span>
+                    <span id="newWindowDim" class="preview-value">-- x --</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">Nuevo Nivel Base:</span>
+                    <span id="newLevelPreview" class="preview-value glowing-text-pink">--</span>
+                </div>
+            </div>
+            <button id="resizeResumeButton" class="action-btn btn-blue">REANUDAR JUEGO</button>
+        </div>
+    </div>
+
+    <!-- Controles Táctiles (Móvil) -->
+    <div id="mobileController" class="gamepad-container dpad-actions-layout">
+        <!-- Parte Izquierda: Movimiento -->
+        <div class="gamepad-left">
+            <button id="btnLeft" class="dpad-btn btn-left-pos">◄</button>
+            <button id="btnDown" class="dpad-btn btn-down-pos">▼</button>
+            <button id="btnRight" class="dpad-btn btn-right-pos">►</button>
+        </div>
+        <!-- Parte Derecha: Acciones -->
+        <div class="gamepad-right">
+            <button id="btnRotate" class="action-btn-circle btn-pink-glow">ROTAR</button>
+            <button id="btnDrop" class="action-btn-circle btn-blue-glow">CAÍDA</button>
+            <button id="mobilePauseButton" class="action-btn-circle btn-yellow-glow">PAUSA</button>
+        </div>
+    </div>
+
+    <!-- Script del Juego -->
+    <script src="tetris.js"></script>
+</body>
+</html>

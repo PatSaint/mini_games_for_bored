@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Breakout | Juego Retro-Moderno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#000; --panel:rgba(10,10,15,.78); --border:rgba(255,255,255,.08); --cyan:#00f0ff; --pink:#ff007f; --green:#39ff14; --yellow:#ffcc00; }
+        * { box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none; }
+        body { background:#000; color:#fff; font-family:'Outfit',sans-serif; overflow:hidden; width:100vw; height:100vh; }
+        #gameCanvas,.overlay-screen,.branding,.back-btn,#hud,.touch-hint,.menu-content { position:absolute; }
+        .back-btn { top:24px; left:24px; z-index:60; text-decoration:none; color:rgba(255,255,255,.45); background:var(--panel); border:1px solid var(--border); padding:10px 18px; border-radius:12px; font:700 11px 'Orbitron',sans-serif; letter-spacing:2px; }
+        .branding { top:24px; right:24px; z-index:60; color:var(--cyan); font:900 14px 'Orbitron',sans-serif; letter-spacing:2px; text-shadow:0 0 12px rgba(0,240,255,.5); }
+        #gameCanvas { inset:0; width:100%; height:100%; }
+        #hud { top:20px; left:50%; transform:translateX(-50%); z-index:20; display:flex; gap:10px; padding:10px 16px; border-radius:18px; background:var(--panel); border:1px solid var(--border); }
+        .hud-panel { min-width:78px; text-align:center; padding:0 6px; border-right:1px solid rgba(255,255,255,.08); }
+        .hud-panel:last-child { border-right:none; }
+        .hud-label { display:block; font-size:9px; letter-spacing:1px; color:rgba(255,255,255,.45); }
+        .hud-val { font:700 18px 'Orbitron',sans-serif; }
+        .cyan{color:var(--cyan);text-shadow:0 0 10px rgba(0,240,255,.45)} .pink{color:var(--pink);text-shadow:0 0 10px rgba(255,0,127,.45)} .green{color:var(--green);text-shadow:0 0 10px rgba(57,255,20,.45)} .yellow{color:var(--yellow);text-shadow:0 0 10px rgba(255,204,0,.45)}
+        .overlay-screen { inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.84); backdrop-filter:blur(8px); }
+        .hidden { display:none !important; }
+        .menu-content { width:min(94vw,560px); max-height:88vh; overflow:auto; background:var(--panel); border:1px solid var(--border); border-radius:24px; padding:28px; display:flex; flex-direction:column; gap:16px; box-shadow:0 20px 50px rgba(0,0,0,.6); }
+        .game-title { text-align:center; font:900 38px 'Orbitron',sans-serif; line-height:1; color:var(--cyan); text-shadow:0 0 14px rgba(0,240,255,.5); }
+        .game-title span { color:var(--pink); text-shadow:0 0 14px rgba(255,0,127,.55); }
+        .game-subtitle,.muted,.instructions { color:rgba(255,255,255,.72); line-height:1.45; font-size:14px; }
+        .field label,.section-title { display:block; margin-bottom:6px; color:var(--cyan); font:700 12px 'Orbitron',sans-serif; letter-spacing:2px; }
+        input,select,button,a { font-family:'Orbitron',sans-serif; }
+        input,select { width:100%; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); color:#fff; }
+        .action-btn,.quick-btn,.menu-back-btn { width:100%; padding:14px; border-radius:12px; border:1px solid currentColor; background:transparent; color:var(--cyan); cursor:pointer; text-decoration:none; text-align:center; letter-spacing:2px; font-weight:700; }
+        .quick-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+        .quick-btn { color:var(--pink); padding:10px; font-size:12px; }
+        .card,.leaderboard { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px; }
+        .stats-row,.board-row,.power-row { display:flex; justify-content:space-between; gap:10px; font-size:13px; }
+        .stats-row + .stats-row,.board-row + .board-row,.power-row + .power-row { margin-top:8px; }
+        .board-row strong { color:var(--cyan); font-family:'Orbitron',sans-serif; }
+        .instructions { padding-left:18px; }
+        .instructions li + li { margin-top:6px; }
+        .touch-hint { bottom:18px; left:50%; transform:translateX(-50%); z-index:18; padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.55); color:rgba(255,255,255,.75); font-size:12px; border:1px solid rgba(255,255,255,.08); }
+        @media (max-width:600px){ .back-btn{top:12px;left:12px;padding:8px 12px;font-size:9px;} .branding{top:14px;right:12px;font-size:10px;} #hud{top:58px;gap:6px;padding:8px 8px;width:calc(100vw - 20px);} .hud-panel{min-width:0;flex:1;padding:0 4px;} .hud-val{font-size:14px;} .game-title{font-size:28px;} .quick-row{grid-template-columns:1fr;} .touch-hint{bottom:10px;width:calc(100vw - 20px);text-align:center;} }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">◀ VOLVER</a>
+    <div class="branding">By PatSaint</div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="hud">
+        <div class="hud-panel"><span class="hud-label">NICK</span><span id="hudNick" class="hud-val cyan">-</span></div>
+        <div class="hud-panel"><span class="hud-label">PUNTOS</span><span id="scoreDisplay" class="hud-val cyan">0</span></div>
+        <div class="hud-panel"><span class="hud-label">VIDAS</span><span id="livesDisplay" class="hud-val pink">3</span></div>
+        <div class="hud-panel"><span class="hud-label">BOLAS</span><span id="ballsDisplay" class="hud-val yellow">1</span></div>
+        <div class="hud-panel"><span class="hud-label">TOP</span><span id="bestDisplay" class="hud-val green">0</span></div>
+    </div>
+    <div class="touch-hint">← → / A D / mouse / touch para mover · ESC pausa</div>
+    <div id="overlay" class="overlay-screen">
+        <div id="homeScreen" class="menu-content">
+            <h1 class="game-title">NEON<br><span>BREAKOUT</span></h1>
+            <p class="game-subtitle">Ahora sí tiene niveles reales, pausa, top 10 y bloques sorpresa bien visibles. Es así de fácil.</p>
+            <div class="field"><label for="nickInput">NICK (MAX 10)</label><input id="nickInput" maxlength="10" placeholder="JUGADOR"></div>
+            <div class="field"><label for="levelSelect">NIVEL INICIAL</label><select id="levelSelect"></select></div>
+            <div class="card" id="levelPreview"></div>
+            <div><div class="section-title">QUICK GAME</div><div class="quick-row"><button class="quick-btn" data-quick-level="2">RELAX</button><button class="quick-btn" data-quick-level="5">ARCADE</button><button class="quick-btn" data-quick-level="8">MAYHEM</button></div></div>
+            <div class="card"><div class="section-title">POWERUPS</div><div class="power-row"><span>❤ Vida</span><span>✦ Multibola</span></div><div class="power-row"><span>▭ Pala grande</span><span>▯ Pala chica</span></div><div class="power-row"><span>❄ Bola lenta</span><span>Bloques con borde blanco</span></div></div>
+            <div class="card"><div class="section-title">CÓMO JUGAR</div><ul class="instructions"><li>PC: teclado, mouse o click.</li><li>Móvil/tablet: arrastrá o tocá donde querés la pala.</li><li>ESC abre pausa con reanudar, reiniciar o volver al menú.</li></ul></div>
+            <button id="startButton" class="action-btn">EMPEZAR PARTIDA</button>
+            <div class="leaderboard"><div class="section-title">TOP 10</div><div id="leaderboard"></div></div>
+            <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
+        </div>
+        <div id="pauseScreen" class="menu-content hidden"><h2 class="game-title">PAUSA</h2><div class="card" id="pauseSummary"></div><button id="resumeButton" class="action-btn">REANUDAR</button><button id="restartButton" class="action-btn">REINICIAR</button><button id="homeButton" class="action-btn">MENÚ INICIAL</button></div>
+        <div id="gameOverScreen" class="menu-content hidden"><h2 id="gameOverTitle" class="game-title">RESULTADO</h2><div class="card" id="gameOverSummary"></div><button id="playAgainButton" class="action-btn">JUGAR OTRA</button><button id="gameOverHomeButton" class="action-btn">MENÚ INICIAL</button></div>
+    </div>
+    <script>
+        const STORAGE_KEY = 'bored.breakout.top10';
+        const SETTINGS_KEY = 'bored.breakout.settings';
+        const LEVELS = [
+            { id:1, name:'Calma', rows:4, cols:7, speed:4.7, paddle:140, lives:4, surprise:.08 },
+            { id:2, name:'Relax', rows:4, cols:8, speed:5.0, paddle:132, lives:4, surprise:.1 },
+            { id:3, name:'Neo', rows:5, cols:8, speed:5.3, paddle:124, lives:4, surprise:.12 },
+            { id:4, name:'Pulse', rows:5, cols:9, speed:5.6, paddle:116, lives:3, surprise:.14 },
+            { id:5, name:'Arcade', rows:6, cols:9, speed:5.9, paddle:108, lives:3, surprise:.16 },
+            { id:6, name:'Rush', rows:6, cols:10, speed:6.2, paddle:102, lives:3, surprise:.18 },
+            { id:7, name:'Volt', rows:7, cols:10, speed:6.5, paddle:96, lives:3, surprise:.2 },
+            { id:8, name:'Mayhem', rows:7, cols:11, speed:6.9, paddle:90, lives:2, surprise:.22 },
+            { id:9, name:'Chaos', rows:8, cols:11, speed:7.3, paddle:84, lives:2, surprise:.24 },
+            { id:10, name:'Insano', rows:8, cols:12, speed:7.7, paddle:78, lives:2, surprise:.26 }
+        ];
+        const POWERUPS = [
+            { type:'life', label:'❤', color:'#39ff14' },
+            { type:'multi', label:'✦', color:'#ff007f' },
+            { type:'expand', label:'▭', color:'#00f0ff' },
+            { type:'shrink', label:'▯', color:'#ff9900' },
+            { type:'slow', label:'❄', color:'#ffcc00' }
+        ];
+        const STATES = { HOME:'HOME', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEOVER' };
+        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('overlay'); const homeScreen = document.getElementById('homeScreen'); const pauseScreen = document.getElementById('pauseScreen'); const gameOverScreen = document.getElementById('gameOverScreen');
+        const nickInput = document.getElementById('nickInput'); const levelSelect = document.getElementById('levelSelect'); const levelPreview = document.getElementById('levelPreview'); const leaderboard = document.getElementById('leaderboard'); const pauseSummary = document.getElementById('pauseSummary'); const gameOverSummary = document.getElementById('gameOverSummary');
+        const scoreDisplay = document.getElementById('scoreDisplay'); const livesDisplay = document.getElementById('livesDisplay'); const ballsDisplay = document.getElementById('ballsDisplay'); const bestDisplay = document.getElementById('bestDisplay'); const hudNick = document.getElementById('hudNick'); const gameOverTitle = document.getElementById('gameOverTitle');
+        let state = STATES.HOME, currentLevel = LEVELS[0], nickname = 'JUGADOR', score = 0, lives = 3, animationId = 0;
+        let paddle = { x:0, y:0, w:120, h:16, speed:9, effect:'normal', effectTimer:0 }, balls = [], bricks = [], particles = [], powerDrops = [];
+        let pointerX = null, keys = {}, baseSpeed = 5.5;
+        function sanitizeNick(value){ return (value || 'JUGADOR').toUpperCase().replace(/[^A-Z0-9ÁÉÍÓÚÜÑ_-]/gi,'').slice(0,10) || 'JUGADOR'; }
+        function loadTop10(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
+        function saveTop10(entry){ const scores = loadTop10(); scores.push(entry); scores.sort((a,b)=>b.score-a.score || a.level-b.level || a.time-b.time); const top = scores.slice(0,10); localStorage.setItem(STORAGE_KEY, JSON.stringify(top)); return top; }
+        function renderTop10(){ const scores = loadTop10(); bestDisplay.textContent = scores[0]?.score || 0; leaderboard.innerHTML = scores.length ? scores.map((s,i)=>`<div class="board-row"><span>#${i+1} ${s.nick}</span><strong>${s.score}</strong><span>N${s.level}</span></div>`).join('') : '<div class="muted">Todavía no hay leyendas breakout.</div>'; }
+        function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify({ nick:nickname, level:currentLevel.id })); }
+        function loadSettings(){ try { const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); nickname = sanitizeNick(saved.nick); currentLevel = LEVELS.find(level=>level.id === Number(saved.level)) || LEVELS[0]; } catch {} }
+        function showScreen(screen){ overlay.classList.remove('hidden'); [homeScreen,pauseScreen,gameOverScreen].forEach(node=>node.classList.add('hidden')); screen.classList.remove('hidden'); }
+        function hideOverlay(){ overlay.classList.add('hidden'); }
+        function setLevel(levelId){ currentLevel = LEVELS.find(level=>level.id === Number(levelId)) || LEVELS[0]; levelSelect.value = String(currentLevel.id); levelPreview.innerHTML = `<div class="stats-row"><span>Nivel</span><strong>${currentLevel.name}</strong></div><div class="stats-row"><span>Filas × columnas</span><strong>${currentLevel.rows} × ${currentLevel.cols}</strong></div><div class="stats-row"><span>Velocidad base</span><strong>${currentLevel.speed.toFixed(1)}</strong></div><div class="stats-row"><span>Sorpresas</span><strong>${Math.round(currentLevel.surprise*100)}%</strong></div>`; saveSettings(); }
+        function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; paddle.y = canvas.height - 52; if (!paddle.x) paddle.x = canvas.width / 2 - paddle.w / 2; }
+        function spawnBall(x = paddle.x + paddle.w / 2, y = paddle.y - 12, speed = baseSpeed){ const angle = (-70 + Math.random() * 40) * Math.PI / 180; balls.push({ x, y, vx:Math.cos(angle) * speed, vy:-Math.abs(Math.sin(angle) * speed), r:8, tint:'#ffffff' }); ballsDisplay.textContent = balls.length; }
+        function spawnParticles(x,y,color,count=8){ for(let i=0;i<count;i++){ const angle=Math.random()*Math.PI*2; const speed=.8+Math.random()*3; particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,size:1+Math.random()*2.5,alpha:1,color}); } }
+        function initBricks(){ bricks = []; const margin = 28, top = 108, gap = 8; const totalGap = (currentLevel.cols - 1) * gap; const brickW = (canvas.width - margin*2 - totalGap) / currentLevel.cols; const brickH = 20; const colors = ['#ff007f','#b026ff','#00f0ff','#39ff14','#ffcc00','#ff9900']; for(let r=0;r<currentLevel.rows;r++){ for(let c=0;c<currentLevel.cols;c++){ const power = Math.random() < currentLevel.surprise ? POWERUPS[Math.floor(Math.random()*POWERUPS.length)] : null; bricks.push({ x:margin + c * (brickW + gap), y:top + r * (brickH + gap), w:brickW, h:brickH, hp:1 + (r > currentLevel.rows - 3 ? 1 : 0), color:colors[r % colors.length], power }); } } }
+        function resetGame(levelId = currentLevel.id){ nickname = sanitizeNick(nickInput.value); nickInput.value = nickname; hudNick.textContent = nickname; setLevel(levelId); resize(); score = 0; lives = currentLevel.lives; paddle.w = currentLevel.paddle; paddle.effect = 'normal'; paddle.effectTimer = 0; paddle.x = canvas.width / 2 - paddle.w / 2; baseSpeed = currentLevel.speed; balls = []; powerDrops = []; particles = []; initBricks(); spawnBall(); scoreDisplay.textContent = '0'; livesDisplay.textContent = String(lives); ballsDisplay.textContent = '1'; }
+        function startGame(levelId = currentLevel.id){ resetGame(levelId); state = STATES.PLAYING; hideOverlay(); }
+        function pauseGame(){ if (state !== STATES.PLAYING) return; state = STATES.PAUSED; pauseSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntos</span><strong>${score}</strong></div><div class="stats-row"><span>Vidas</span><strong>${lives}</strong></div><div class="stats-row"><span>Nivel</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div>`; showScreen(pauseScreen); }
+        function resumeGame(){ if (state !== STATES.PAUSED) return; state = STATES.PLAYING; hideOverlay(); }
+        function goHome(){ state = STATES.HOME; renderTop10(); showScreen(homeScreen); }
+        function finishGame(won){ if (state === STATES.GAMEOVER) return; state = STATES.GAMEOVER; const top = saveTop10({ nick:nickname, score, level:currentLevel.id, time:Date.now() }); bestDisplay.textContent = top[0]?.score || 0; gameOverTitle.innerHTML = won ? 'VICTORIA' : 'GAME OVER'; gameOverSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntaje</span><strong>${score}</strong></div><div class="stats-row"><span>Nivel</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div><div class="stats-row"><span>Top actual</span><strong>${top[0]?.nick || nickname} · ${top[0]?.score || score}</strong></div>`; renderTop10(); showScreen(gameOverScreen); }
+        function activeBrickCount(){ return bricks.filter(brick=>brick.hp > 0).length; }
+        function applyPowerup(type){ if (type === 'life') { lives++; livesDisplay.textContent = String(lives); } else if (type === 'multi') { const copy = [...balls]; copy.slice(0,2).forEach(ball => balls.push({ ...ball, vx:-ball.vx || baseSpeed * .8, vy:ball.vy, tint:'#ff007f' })); } else if (type === 'expand') { paddle.w = Math.min(190, paddle.w + 34); paddle.effect = 'expand'; paddle.effectTimer = 900; } else if (type === 'shrink') { paddle.w = Math.max(60, paddle.w - 24); paddle.effect = 'shrink'; paddle.effectTimer = 900; } else if (type === 'slow') { balls.forEach(ball => { ball.vx *= .82; ball.vy *= .82; ball.tint = '#ffcc00'; }); paddle.effect = 'slow'; paddle.effectTimer = 600; } }
+        function dropPowerup(brick){ if (!brick.power) return; powerDrops.push({ x:brick.x + brick.w / 2, y:brick.y + brick.h / 2, vy:2.2, ...brick.power }); }
+        function updatePaddle(){ if (keys['ArrowLeft'] || keys['KeyA']) paddle.x -= paddle.speed; if (keys['ArrowRight'] || keys['KeyD']) paddle.x += paddle.speed; if (pointerX !== null) paddle.x += (pointerX - (paddle.x + paddle.w / 2)) * .22; paddle.x = Math.max(10, Math.min(canvas.width - paddle.w - 10, paddle.x)); if (paddle.effectTimer > 0) { paddle.effectTimer--; if (paddle.effectTimer === 0) { paddle.w = currentLevel.paddle; paddle.effect = 'normal'; balls.forEach(ball => ball.tint = '#ffffff'); } } }
+        function loseBall(ballIndex){ balls.splice(ballIndex,1); ballsDisplay.textContent = balls.length; if (!balls.length) { lives--; livesDisplay.textContent = String(lives); if (lives <= 0) finishGame(false); else spawnBall(); } }
+        function updateBalls(){ for(let i=balls.length-1;i>=0;i--){ const ball = balls[i]; ball.x += ball.vx; ball.y += ball.vy; if (ball.x - ball.r <= 0 || ball.x + ball.r >= canvas.width) { ball.vx *= -1; ball.x = Math.max(ball.r, Math.min(canvas.width - ball.r, ball.x)); spawnParticles(ball.x,ball.y,'#ffffff',4); } if (ball.y - ball.r <= 0) { ball.vy = Math.abs(ball.vy); spawnParticles(ball.x,ball.y,'#ffffff',4); } if (ball.y - ball.r > canvas.height) { spawnParticles(ball.x,canvas.height-6,'#ff007f',14); loseBall(i); continue; } if (ball.vy > 0 && ball.y + ball.r >= paddle.y && ball.y - ball.r <= paddle.y + paddle.h && ball.x >= paddle.x && ball.x <= paddle.x + paddle.w) { const hit = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2); const angle = hit * 1.1; const speed = Math.max(baseSpeed, Math.hypot(ball.vx, ball.vy)); ball.vx = Math.sin(angle) * speed; ball.vy = -Math.cos(angle) * speed; spawnParticles(ball.x,paddle.y,'#00f0ff',8); } for (const brick of bricks) { if (brick.hp <= 0) continue; const nearestX = Math.max(brick.x, Math.min(ball.x, brick.x + brick.w)); const nearestY = Math.max(brick.y, Math.min(ball.y, brick.y + brick.h)); const dx = ball.x - nearestX; const dy = ball.y - nearestY; if ((dx*dx + dy*dy) < ball.r * ball.r) { brick.hp--; ball.vy *= -1; score += brick.hp <= 0 ? 20 : 8; scoreDisplay.textContent = String(score); spawnParticles(nearestX,nearestY,brick.color,12); if (brick.hp <= 0) dropPowerup(brick); if (!activeBrickCount()) finishGame(true); break; } } } ballsDisplay.textContent = balls.length; }
+        function updatePowerDrops(){ for(let i=powerDrops.length-1;i>=0;i--){ const drop = powerDrops[i]; drop.y += drop.vy; if (drop.y > canvas.height + 20) { powerDrops.splice(i,1); continue; } if (drop.y >= paddle.y - 6 && drop.x >= paddle.x && drop.x <= paddle.x + paddle.w) { applyPowerup(drop.type); spawnParticles(drop.x, drop.y, drop.color, 16); powerDrops.splice(i,1); } } }
+        function updateParticles(){ particles = particles.filter(p => (p.x += p.vx, p.y += p.vy, p.alpha -= .025, p.alpha > 0)); }
+        function update(){ if (state !== STATES.PLAYING) return; updatePaddle(); updateBalls(); updatePowerDrops(); updateParticles(); }
+        function drawBackground(){ const g = ctx.createLinearGradient(0,0,0,canvas.height); g.addColorStop(0,'#02030a'); g.addColorStop(1,'#000'); ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height); }
+        function draw(){ drawBackground(); bricks.forEach(brick=>{ if (brick.hp <= 0) return; ctx.save(); ctx.shadowBlur = 12; ctx.shadowColor = brick.color; ctx.fillStyle = brick.hp > 1 ? 'rgba(255,255,255,.08)' : brick.color; ctx.strokeStyle = brick.power ? '#ffffff' : brick.color; ctx.lineWidth = brick.power ? 2.5 : 1.5; ctx.beginPath(); ctx.roundRect(brick.x, brick.y, brick.w, brick.h, 5); ctx.fill(); ctx.stroke(); if (brick.power) { ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px Orbitron'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(brick.power.label, brick.x + brick.w / 2, brick.y + brick.h / 2 + 1); } ctx.restore(); }); ctx.save(); ctx.shadowBlur = 16; ctx.shadowColor = paddle.effect === 'shrink' ? '#ff9900' : paddle.effect === 'expand' ? '#39ff14' : '#00f0ff'; ctx.fillStyle = paddle.effect === 'shrink' ? '#ff9900' : '#00f0ff'; ctx.beginPath(); ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 8); ctx.fill(); ctx.restore(); balls.forEach(ball=>{ ctx.save(); ctx.shadowBlur = 14; ctx.shadowColor = ball.tint; ctx.fillStyle = ball.tint; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }); powerDrops.forEach(drop=>{ ctx.save(); ctx.shadowBlur = 16; ctx.shadowColor = drop.color; ctx.strokeStyle = drop.color; ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(drop.x - 14, drop.y - 14, 28, 28, 8); ctx.fill(); ctx.stroke(); ctx.fillStyle = drop.color; ctx.font = 'bold 15px Orbitron'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(drop.label, drop.x, drop.y + 1); ctx.restore(); }); particles.forEach(p=>{ ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.shadowBlur = 10; ctx.shadowColor = p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); ctx.restore(); }); }
+        function loop(){ update(); draw(); animationId = requestAnimationFrame(loop); }
+        LEVELS.forEach(level => { const option = document.createElement('option'); option.value = level.id; option.textContent = `${level.id} · ${level.name}`; levelSelect.appendChild(option); });
+        document.getElementById('startButton').addEventListener('click', () => startGame()); document.getElementById('resumeButton').addEventListener('click', resumeGame); document.getElementById('restartButton').addEventListener('click', () => startGame()); document.getElementById('homeButton').addEventListener('click', goHome); document.getElementById('playAgainButton').addEventListener('click', () => startGame()); document.getElementById('gameOverHomeButton').addEventListener('click', goHome);
+        levelSelect.addEventListener('change', e => setLevel(e.target.value)); nickInput.addEventListener('input', e => { nickname = sanitizeNick(e.target.value); e.target.value = nickname; hudNick.textContent = nickname; saveSettings(); }); document.querySelectorAll('[data-quick-level]').forEach(btn => btn.addEventListener('click', () => startGame(btn.dataset.quickLevel)));
+        window.addEventListener('resize', resize); window.addEventListener('keydown', e => { if (['ArrowLeft','ArrowRight','Space','Escape'].includes(e.code)) e.preventDefault(); keys[e.code] = true; if (e.code === 'Escape') { if (state === STATES.PLAYING) pauseGame(); else if (state === STATES.PAUSED) resumeGame(); return; } if (e.code === 'Space' && (state === STATES.HOME || state === STATES.GAMEOVER)) startGame(); }); window.addEventListener('keyup', e => { keys[e.code] = false; });
+        function updatePointer(clientX){ pointerX = clientX; }
+        window.addEventListener('mousemove', e => updatePointer(e.clientX)); window.addEventListener('mousedown', e => updatePointer(e.clientX)); window.addEventListener('touchstart', e => { if (e.touches[0]) { e.preventDefault(); updatePointer(e.touches[0].clientX); if (state === STATES.HOME || state === STATES.GAMEOVER) startGame(); } }, { passive:false }); window.addEventListener('touchmove', e => { if (e.touches[0]) { e.preventDefault(); updatePointer(e.touches[0].clientX); } }, { passive:false });
+        loadSettings(); nickInput.value = nickname; hudNick.textContent = nickname; setLevel(currentLevel.id); resize(); renderTop10(); goHome(); animationId = requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

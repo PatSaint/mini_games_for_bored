@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Simon | Juego Retro-Moderno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --panel-bg: rgba(10, 10, 15, 0.7);
+            --border-color: rgba(255, 255, 255, 0.07);
+            --neon-green: #39ff14;
+            --neon-red: #ff073a;
+            --neon-yellow: #ffcc00;
+            --neon-blue: #0066ff;
+            --neon-cyan: #00f0ff;
+            --glow-cyan: 0 0 10px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding-top: 60px;
+        }
+
+        /* Botón Volver */
+        .back-btn {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            z-index: 50;
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.4);
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 10px 18px;
+            border-radius: 12px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            color: var(--neon-cyan);
+            border-color: var(--neon-cyan);
+            box-shadow: var(--glow-cyan);
+            transform: translateY(-2px);
+        }
+
+        .branding {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            z-index: 50;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--neon-cyan);
+            text-shadow: var(--glow-cyan);
+        }
+
+        /* HUD */
+        #hud {
+            margin-bottom: 24px;
+            z-index: 10;
+            display: flex;
+            gap: 16px;
+            padding: 10px 24px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .hud-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 12px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hud-panel:last-child {
+            border-right: none;
+        }
+
+        .pause-chip {
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: var(--neon-cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            padding: 10px 14px;
+            cursor: pointer;
+        }
+
+        .hud-label {
+            font-size: 9px;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 2px;
+        }
+
+        .hud-val {
+            font-family: 'Orbitron', monospace;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .val-score { color: var(--neon-cyan); text-shadow: var(--glow-cyan); }
+        .val-high { color: var(--neon-green); text-shadow: 0 0 10px rgba(57,255,20,0.4); }
+
+        /* Canvas */
+        #boardContainer {
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameCanvas {
+            background: #000000;
+            display: block;
+            cursor: pointer;
+        }
+
+        /* Overlays */
+        .overlay-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .overlay-screen.hidden {
+            display: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .menu-content {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 440px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 38px;
+            font-weight: 900;
+            color: var(--neon-cyan);
+            text-shadow: var(--glow-cyan);
+            line-height: 1.1;
+        }
+
+        .game-title span {
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px rgba(255,0,127,0.5);
+        }
+
+        .game-subtitle {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            line-height: 1.5;
+        }
+
+        .action-btn {
+            width: 100%;
+            background: transparent;
+            color: var(--neon-cyan);
+            border: 2px solid var(--neon-cyan);
+            padding: 14px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            letter-spacing: 2px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--neon-cyan);
+            color: #000000;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .stats-preview {
+            width: 100%;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .preview-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
+        .preview-lbl { color: rgba(255,255,255,0.5); }
+        .preview-val { font-family: 'Orbitron', monospace; font-weight: 700; color: var(--neon-cyan); }
+
+        .game-status-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 16px;
+            text-transform: uppercase;
+        }
+
+        .level-selector {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .level-selector label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--neon-cyan);
+            text-shadow: var(--glow-cyan);
+        }
+
+        .menu-input {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: #ffffff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            padding: 14px 16px;
+            text-transform: uppercase;
+        }
+
+        .menu-input:focus {
+            outline: none;
+            border-color: var(--neon-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .level-selector select,
+        .menu-back-btn {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: #ffffff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            padding: 14px 16px;
+        }
+
+        .menu-back-btn { text-decoration: none; text-align: center; }
+
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .leaderboard-row {
+            display: grid;
+            grid-template-columns: 28px 1fr auto;
+            gap: 8px;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .leaderboard-rank,
+        .leaderboard-score { font-family: 'Orbitron', monospace; }
+        .leaderboard-rank { color: rgba(255,255,255,0.5); }
+        .leaderboard-name { color: rgba(255,255,255,0.82); }
+        .leaderboard-score { color: var(--neon-cyan); text-shadow: var(--glow-cyan); }
+        .leaderboard-empty { color: rgba(255,255,255,0.5); font-size: 12px; }
+
+        .quick-links {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @media (max-width: 480px) {
+            .back-btn { top: 12px; left: 12px; padding: 6px 12px; font-size: 9px; }
+            .branding { top: 12px; right: 12px; font-size: 10px; }
+            #hud { top: 12px; padding: 6px 16px; }
+            .hud-val { font-size: 15px; }
+            .game-title { font-size: 28px; }
+            .quick-links { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">◀ VOLVER</a>
+    <div class="branding">By PatSaint</div>
+
+    <div id="hud">
+        <div class="hud-panel">
+            <span class="hud-label">PUNTOS</span>
+            <span id="scoreDisplay" class="hud-val val-score">0</span>
+        </div>
+        <div class="hud-panel">
+            <span class="hud-label">RÉCORD</span>
+            <span id="highScoreDisplay" class="hud-val val-high">0</span>
+        </div>
+        <button id="pauseButton" class="pause-chip">PAUSA</button>
+    </div>
+
+    <div id="boardContainer">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div id="statusText" class="game-status-text">
+        CARGANDO...
+    </div>
+
+    <!-- Overlays -->
+    <div id="overlay" class="overlay-screen">
+        <!-- Start Screen -->
+        <div id="startScreen" class="menu-content">
+            <h1 class="game-title">NEON <span>SIMON</span></h1>
+            <p class="game-subtitle">Ingresá tu nick y elegí el nivel inicial: sube la longitud de apertura y acelera los flashes. Tocá o hacé clic en los colores; ESC pausa y al volver se repite la secuencia.</p>
+            <div class="level-selector">
+                <label for="nicknameInput">NICKNAME (MAX 10)</label>
+                <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" autocomplete="off">
+            </div>
+            <div class="level-selector">
+                <label for="levelSelect">NIVEL INICIAL</label>
+                <select id="levelSelect">
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+                </select>
+            </div>
+            <div class="stats-preview">
+                <div class="preview-item"><span class="preview-lbl">Secuencia inicial:</span><span id="sequencePreview" class="preview-val">--</span></div>
+                <div class="preview-item"><span class="preview-lbl">Flash:</span><span id="flashPreview" class="preview-val">--</span></div>
+            </div>
+            <div class="stats-preview">
+                <div class="preview-item"><span class="preview-lbl">Top 10 Neon:</span><span class="preview-val">LOCAL</span></div>
+                <div id="leaderboardStart" class="leaderboard-list"></div>
+            </div>
+            <div class="quick-links">
+                <a href="asteroids.html" class="menu-back-btn">ASTEROIDS</a>
+                <a href="snake.html" class="menu-back-btn">SNAKE</a>
+                <a href="tetris.html" class="menu-back-btn">TETRIS</a>
+            </div>
+            <button id="startButton" class="action-btn">INICIAR JUEGO</button>
+            <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
+        </div>
+
+        <div id="pauseScreen" class="menu-content hidden">
+            <h2 class="game-title">PAUSA <span>SIMON</span></h2>
+            <p class="game-subtitle">Reanudá con ESC. Para no confundirte, al volver Simon repite toda la secuencia actual.</p>
+            <div class="stats-preview">
+                <div class="preview-item"><span class="preview-lbl">Jugador:</span><span id="pauseNick" class="preview-val">PLAYER</span></div>
+                <div class="preview-item"><span class="preview-lbl">Secuencia lograda:</span><span id="pauseScore" class="preview-val">0</span></div>
+            </div>
+            <div class="stats-preview">
+                <div class="preview-item"><span class="preview-lbl">Top 10:</span><span class="preview-val">LOCAL</span></div>
+                <div id="leaderboardPause" class="leaderboard-list"></div>
+            </div>
+            <div class="quick-links">
+                <a href="asteroids.html" class="menu-back-btn">ASTEROIDS</a>
+                <a href="snake.html" class="menu-back-btn">SNAKE</a>
+                <a href="tetris.html" class="menu-back-btn">TETRIS</a>
+            </div>
+            <button id="resumeButton" class="action-btn">REANUDAR</button>
+            <button id="pauseRestartButton" class="action-btn">REINICIAR</button>
+            <a href="index.html" class="menu-back-btn">IR AL HOME</a>
+        </div>
+
+        <!-- End Screen -->
+        <div id="endScreen" class="menu-content hidden">
+            <h2 id="endTitle" class="game-title" style="color: #ff073a; text-shadow: 0 0 10px rgba(255,7,58,0.5);">FIN DEL JUEGO</h2>
+            <div class="stats-preview">
+                <div class="preview-item">
+                    <span class="preview-lbl">Secuencia Lograda:</span>
+                    <span id="finalScore" class="preview-val">0</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-lbl">Mejor Puntaje:</span>
+                    <span id="finalHighScore" class="preview-val">0</span>
+                </div>
+            </div>
+            <div class="stats-preview">
+                <div class="preview-item"><span class="preview-lbl">Top 10:</span><span class="preview-val">LOCAL</span></div>
+                <div id="leaderboardEnd" class="leaderboard-list"></div>
+            </div>
+            <div class="quick-links">
+                <a href="asteroids.html" class="menu-back-btn">ASTEROIDS</a>
+                <a href="snake.html" class="menu-back-btn">SNAKE</a>
+                <a href="tetris.html" class="menu-back-btn">TETRIS</a>
+            </div>
+            <button id="restartButton" class="action-btn">JUGAR DE NUEVO</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const statusText = document.getElementById('statusText');
+
+        const overlay = document.getElementById('overlay');
+        const startScreen = document.getElementById('startScreen');
+        const pauseScreen = document.getElementById('pauseScreen');
+        const endScreen = document.getElementById('endScreen');
+        const endTitle = document.getElementById('endTitle');
+        const finalScore = document.getElementById('finalScore');
+        const finalHighScore = document.getElementById('finalHighScore');
+        const levelSelect = document.getElementById('levelSelect');
+        const sequencePreview = document.getElementById('sequencePreview');
+        const flashPreview = document.getElementById('flashPreview');
+        const nicknameInput = document.getElementById('nicknameInput');
+        const leaderboardStart = document.getElementById('leaderboardStart');
+        const leaderboardPause = document.getElementById('leaderboardPause');
+        const leaderboardEnd = document.getElementById('leaderboardEnd');
+        const pauseNick = document.getElementById('pauseNick');
+        const pauseScore = document.getElementById('pauseScore');
+
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const resumeButton = document.getElementById('resumeButton');
+        const pauseRestartButton = document.getElementById('pauseRestartButton');
+        const pauseButton = document.getElementById('pauseButton');
+
+        // Estados
+        const STATES = { START: 'START', CPU: 'CPU', USER: 'USER', PAUSED: 'PAUSED', GAMEOVER: 'GAMEOVER' };
+        let currentState = STATES.START;
+
+        // Variables
+        let sequence = [];
+        let userSequenceIndex = 0;
+        let score = 0;
+        let topScores = loadTopScores();
+        let highScore = topScores[0]?.score || 0;
+        let currentNickname = 'PLAYER';
+        let scheduledTimeouts = [];
+
+        let diskSize = 360;
+        let centerRadius = 50;
+        let initialSequenceLength = 1;
+        let flashInterval = 600;
+
+        // Sectores de Botones
+        const BUTTONS = [
+            { id: 0, color: '#39ff14', rawColor: 'rgba(57, 255, 20, 0.15)', activeColor: '#39ff14', startAngle: -Math.PI, endAngle: -Math.PI/2, glow: 'rgba(57,255,20,0.6)', flashTime: 0 }, // Verde (Top-Left)
+            { id: 1, color: '#ff073a', rawColor: 'rgba(255, 7, 58, 0.15)', activeColor: '#ff073a', startAngle: -Math.PI/2, endAngle: 0, glow: 'rgba(255,7,58,0.6)', flashTime: 0 }, // Rojo (Top-Right)
+            { id: 2, color: '#ffcc00', rawColor: 'rgba(255, 204, 0, 0.15)', activeColor: '#ffcc00', startAngle: 0, endAngle: Math.PI/2, glow: 'rgba(255,204,0,0.6)', flashTime: 0 }, // Amarillo (Bottom-Right)
+            { id: 3, color: '#0066ff', rawColor: 'rgba(0, 102, 255, 0.15)', activeColor: '#0066ff', startAngle: Math.PI/2, endAngle: Math.PI, glow: 'rgba(0,102,255,0.6)', flashTime: 0 }  // Azul (Bottom-Left)
+        ];
+
+        let pulseWaves = []; // Efecto de ondas expansivas al tocar
+        highScoreDisplay.textContent = highScore;
+        nicknameInput.value = currentNickname;
+        nicknameInput.addEventListener('input', () => {
+            const sanitized = sanitizeNickname(nicknameInput.value);
+            if (nicknameInput.value !== sanitized) nicknameInput.value = sanitized;
+        });
+        renderTopScores();
+
+        function sanitizeNickname(value) {
+            return (value || '')
+                .toUpperCase()
+                .replace(/[^A-Z0-9ÁÉÍÓÚÜÑ _-]/gi, '')
+                .trim()
+                .slice(0, 10) || 'PLAYER';
+        }
+
+        function loadTopScores() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem('neonSimonTop10') || '[]');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function saveTopScore() {
+            if (score <= 0) return;
+            topScores.push({ nick: currentNickname, score, level: Number(levelSelect.value || 1) });
+            topScores = topScores
+                .sort((a, b) => b.score - a.score || b.level - a.level || a.nick.localeCompare(b.nick))
+                .slice(0, 10);
+            localStorage.setItem('neonSimonTop10', JSON.stringify(topScores));
+            highScore = topScores[0]?.score || 0;
+            highScoreDisplay.textContent = highScore;
+            renderTopScores();
+        }
+
+        function renderTopScores() {
+            const markup = topScores.length
+                ? topScores.map((entry, index) => `
+                    <div class="leaderboard-row">
+                        <span class="leaderboard-rank">#${index + 1}</span>
+                        <span class="leaderboard-name">${entry.nick} · Nv ${entry.level}</span>
+                        <span class="leaderboard-score">${entry.score}</span>
+                    </div>
+                `).join('')
+                : '<div class="leaderboard-empty">Todavía no hay partidas guardadas.</div>';
+            [leaderboardStart, leaderboardPause, leaderboardEnd].forEach((target) => {
+                if (target) target.innerHTML = markup;
+            });
+        }
+
+        function schedule(callback, delay) {
+            const id = setTimeout(() => {
+                scheduledTimeouts = scheduledTimeouts.filter((item) => item !== id);
+                callback();
+            }, delay);
+            scheduledTimeouts.push(id);
+        }
+
+        function clearScheduled() {
+            scheduledTimeouts.forEach(clearTimeout);
+            scheduledTimeouts = [];
+        }
+
+        function showMenu(screen) {
+            overlay.classList.remove('hidden');
+            startScreen.classList.add('hidden');
+            pauseScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            screen.classList.remove('hidden');
+        }
+
+        function resizeGame() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            diskSize = Math.max(240, Math.min(420, width - 40, height - 200));
+            centerRadius = diskSize * 0.16;
+
+            canvas.width = diskSize + 20; // pequeño margen de dibujo
+            canvas.height = diskSize + 20;
+        }
+
+        function updateLevelSettings() {
+            const level = Number(levelSelect.value || 1);
+            initialSequenceLength = 1 + Math.floor(level / 2);
+            flashInterval = Math.max(260, 620 - level * 30);
+            sequencePreview.textContent = `${initialSequenceLength}`;
+            flashPreview.textContent = `${flashInterval} ms`;
+        }
+
+        // --- CONTROLES ---
+        window.addEventListener('resize', resizeGame);
+        levelSelect.addEventListener('change', updateLevelSettings);
+        window.addEventListener('keydown', (e) => {
+            if (['Space', 'Escape'].includes(e.code)) e.preventDefault();
+            if (e.code === 'Escape') {
+                if (currentState === STATES.CPU || currentState === STATES.USER) pauseGame();
+                else if (currentState === STATES.PAUSED) resumeGame();
+                return;
+            }
+            if (e.code === 'Space') {
+                if (currentState === STATES.START || currentState === STATES.GAMEOVER) startGame();
+            }
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (currentState !== STATES.USER) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left - canvas.width / 2;
+            const clickY = e.clientY - rect.top - canvas.height / 2;
+
+            const distance = Math.sqrt(clickX * clickX + clickY * clickY);
+            
+            // Si hace clic fuera del disco o en el centro inactivo, ignorar
+            if (distance > diskSize / 2 || distance < centerRadius) return;
+
+            // Encontrar sector según ángulo (-PI a PI)
+            let angle = Math.atan2(clickY, clickX);
+            
+            // Mapear ángulo a sector correspondiente
+            let clickedBtnId = -1;
+            BUTTONS.forEach(btn => {
+                let checkAngle = angle;
+                // Ajuste de límites para cuadrante 4
+                if (btn.startAngle === Math.PI/2 && checkAngle < -Math.PI/2) {
+                    checkAngle += Math.PI * 2;
+                }
+                // Ajuste de límites para cuadrante 1
+                if (btn.startAngle === -Math.PI && checkAngle > 0) {
+                    checkAngle -= Math.PI * 2;
+                }
+
+                if (checkAngle >= btn.startAngle && checkAngle < btn.endAngle) {
+                    clickedBtnId = btn.id;
+                }
+            });
+
+            if (clickedBtnId !== -1) {
+                handleUserClick(clickedBtnId);
+            }
+        });
+
+        // Touch support
+        canvas.addEventListener('touchstart', (e) => {
+            if (currentState !== STATES.USER || !e.touches[0]) return;
+            e.preventDefault();
+
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.touches[0].clientX - rect.left - canvas.width / 2;
+            const clickY = e.touches[0].clientY - rect.top - canvas.height / 2;
+
+            const distance = Math.sqrt(clickX * clickX + clickY * clickY);
+            if (distance > diskSize / 2 || distance < centerRadius) return;
+
+            let angle = Math.atan2(clickY, clickX);
+            let clickedBtnId = -1;
+            BUTTONS.forEach(btn => {
+                let checkAngle = angle;
+                if (btn.startAngle === Math.PI/2 && checkAngle < -Math.PI/2) checkAngle += Math.PI * 2;
+                if (btn.startAngle === -Math.PI && checkAngle > 0) checkAngle -= Math.PI * 2;
+
+                if (checkAngle >= btn.startAngle && checkAngle < btn.endAngle) {
+                    clickedBtnId = btn.id;
+                }
+            });
+
+            if (clickedBtnId !== -1) {
+                handleUserClick(clickedBtnId);
+            }
+        });
+
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+        resumeButton.addEventListener('click', resumeGame);
+        pauseRestartButton.addEventListener('click', startGame);
+        pauseButton.addEventListener('click', () => {
+            if (currentState === STATES.CPU || currentState === STATES.USER) pauseGame();
+            else if (currentState === STATES.PAUSED) resumeGame();
+        });
+
+        function startGame() {
+            clearScheduled();
+            currentNickname = sanitizeNickname(nicknameInput.value);
+            nicknameInput.value = currentNickname;
+            sequence = [];
+            score = 0;
+            scoreDisplay.textContent = 0;
+            updateLevelSettings();
+
+            currentState = STATES.CPU;
+            overlay.classList.add('hidden');
+            statusText.textContent = "Presta Atención";
+            statusText.style.color = 'rgba(255, 255, 255, 0.4)';
+
+            resizeGame();
+            pulseWaves = [];
+            
+            schedule(nextRound, 1000);
+        }
+
+        function nextRound() {
+            const additions = sequence.length === 0 ? initialSequenceLength : 1;
+            for (let i = 0; i < additions; i++) {
+                sequence.push(Math.floor(Math.random() * 4));
+            }
+            score = sequence.length - 1;
+            scoreDisplay.textContent = score;
+
+            playSequence();
+        }
+
+        function playSequence() {
+            clearScheduled();
+            currentState = STATES.CPU;
+            statusText.textContent = "Presta Atención";
+            statusText.style.color = 'rgba(255, 255, 255, 0.4)';
+
+            let idx = 0;
+            const playStep = () => {
+                if (idx >= sequence.length) {
+                    startUserTurn();
+                    return;
+                }
+
+                flashButton(sequence[idx]);
+                idx++;
+                schedule(playStep, flashInterval);
+            };
+            schedule(playStep, flashInterval);
+        }
+
+        function flashButton(id) {
+            const btn = BUTTONS[id];
+            btn.flashTime = 20; // 20 frames de destello brillante
+
+            // Lanzar onda expansiva
+            pulseWaves.push({
+                radius: centerRadius,
+                maxRadius: diskSize / 2,
+                color: btn.color,
+                alpha: 1.0,
+                growSpeed: 3.5
+            });
+        }
+
+        function startUserTurn() {
+            currentState = STATES.USER;
+            userSequenceIndex = 0;
+            statusText.textContent = "Tu Turno";
+            statusText.style.color = varColor('--neon-cyan');
+        }
+
+        function handleUserClick(id) {
+            if (currentState !== STATES.USER) return;
+            flashButton(id);
+
+            // Comprobar secuencia
+            if (id === sequence[userSequenceIndex]) {
+                userSequenceIndex++;
+                // ¿Completó la secuencia de la ronda?
+                if (userSequenceIndex === sequence.length) {
+                    currentState = STATES.CPU;
+                    statusText.textContent = "¡Bien!";
+                    statusText.style.color = '#39ff14';
+                    schedule(nextRound, 1000);
+                }
+            } else {
+                // Falló
+                triggerGameOver();
+            }
+        }
+
+        function pauseGame() {
+            clearScheduled();
+            currentState = STATES.PAUSED;
+            pauseNick.textContent = currentNickname;
+            pauseScore.textContent = score;
+            renderTopScores();
+            showMenu(pauseScreen);
+        }
+
+        function resumeGame() {
+            overlay.classList.add('hidden');
+            statusText.textContent = 'Repitiendo Secuencia';
+            statusText.style.color = varColor('--neon-cyan');
+            schedule(playSequence, 300);
+        }
+
+        function triggerGameOver() {
+            clearScheduled();
+            currentState = STATES.GAMEOVER;
+            statusText.textContent = "Secuencia Incorrecta";
+            statusText.style.color = '#ff073a';
+
+            // Parpadear todo en rojo
+            BUTTONS.forEach(b => b.flashTime = 30);
+
+            saveTopScore();
+
+            finalScore.textContent = score;
+            finalHighScore.textContent = highScore;
+
+            schedule(() => {
+                renderTopScores();
+                showMenu(endScreen);
+            }, 1000);
+        }
+
+        function varColor(variableName) {
+            return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+        }
+
+        // --- RENDERIZADO ---
+        function draw() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const radius = diskSize / 2;
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Dibujar Ondas Expansivas (Detrás de los botones)
+            ctx.save();
+            for (let i = pulseWaves.length - 1; i >= 0; i--) {
+                const w = pulseWaves[i];
+                w.radius += w.growSpeed;
+                w.alpha -= 0.035;
+
+                if (w.alpha <= 0 || w.radius >= w.maxRadius) {
+                    pulseWaves.splice(i, 1);
+                    continue;
+                }
+
+                ctx.strokeStyle = w.color;
+                ctx.lineWidth = 4;
+                ctx.globalAlpha = w.alpha;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = w.color;
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, w.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 2. Dibujar Sectores de Simon
+            BUTTONS.forEach(btn => {
+                ctx.save();
+                const isFlashing = btn.flashTime > 0;
+                if (isFlashing) btn.flashTime--;
+
+                // Configurar luces
+                const isCurrentStateCPU = currentState === STATES.CPU;
+                ctx.fillStyle = isFlashing ? btn.activeColor : btn.rawColor;
+                ctx.strokeStyle = btn.color;
+                ctx.lineWidth = isFlashing ? 3 : 1.5;
+                ctx.shadowBlur = isFlashing ? 20 : 6;
+                ctx.shadowColor = btn.color;
+
+                // Dibujar arco de sector circular
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, btn.startAngle + 0.04, btn.endAngle - 0.04);
+                ctx.arc(cx, cy, centerRadius, btn.endAngle - 0.04, btn.startAngle + 0.04, true);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            // 3. Eje central inactivo (Circulo Negro con Anillo Neón)
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = varColor('--neon-cyan');
+            ctx.strokeStyle = varColor('--neon-cyan');
+            ctx.fillStyle = '#000000';
+            ctx.lineWidth = 2.5;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, centerRadius - 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Sello estético de Simon
+            ctx.fillStyle = 'rgba(255,255,255,0.06)';
+            ctx.shadowBlur = 0;
+            ctx.font = `bold ${Math.floor(centerRadius * 0.32)}px 'Orbitron', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText("SIMON", cx, cy);
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        updateLevelSettings();
+        resizeGame();
+        statusText.textContent = "Listo para Jugar";
+        gameLoop();
+    </script>
+</body>
+</html>

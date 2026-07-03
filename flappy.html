@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Neon | Juego Retro-Moderno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#000; --panel:rgba(10,10,15,.78); --border:rgba(255,255,255,.08); --cyan:#00f0ff; --orange:#ff9900; --pink:#ff007f; --green:#39ff14; }
+        * { box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none; }
+        body { background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; overflow:hidden; width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
+        .back-btn,.menu-back-btn,.action-btn,.quick-btn,input,select { font-family:'Orbitron',sans-serif; }
+        .back-btn,.branding,#hud,.overlay-screen,.menu-content,#gameCanvas,.touch-hint { position:absolute; }
+        .back-btn { top:24px; left:24px; z-index:60; text-decoration:none; color:rgba(255,255,255,.45); background:var(--panel); border:1px solid var(--border); padding:10px 18px; border-radius:12px; letter-spacing:2px; font-size:11px; }
+        .branding { top:24px; right:24px; z-index:60; color:var(--cyan); font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:2px; text-shadow:0 0 12px rgba(0,240,255,.5); }
+        #gameCanvas { inset:0; width:100%; height:100%; }
+        #hud { top:20px; left:50%; transform:translateX(-50%); z-index:20; display:flex; gap:14px; padding:10px 18px; background:var(--panel); border:1px solid var(--border); border-radius:18px; backdrop-filter:blur(10px); }
+        .hud-panel { min-width:82px; text-align:center; padding:0 8px; border-right:1px solid rgba(255,255,255,.08); }
+        .hud-panel:last-child { border-right:none; }
+        .hud-label { display:block; font-size:9px; letter-spacing:1px; color:rgba(255,255,255,.45); }
+        .hud-val { font-family:'Orbitron',sans-serif; font-weight:700; font-size:18px; }
+        .cyan { color:var(--cyan); text-shadow:0 0 10px rgba(0,240,255,.45); } .orange { color:var(--orange); text-shadow:0 0 10px rgba(255,153,0,.45); } .green { color:var(--green); text-shadow:0 0 10px rgba(57,255,20,.45); }
+        .overlay-screen { inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.84); backdrop-filter:blur(8px); }
+        .hidden { display:none !important; }
+        .menu-content { width:min(94vw,520px); max-height:88vh; overflow:auto; background:var(--panel); border:1px solid var(--border); border-radius:24px; padding:28px; display:flex; flex-direction:column; gap:16px; box-shadow:0 20px 50px rgba(0,0,0,.6); }
+        .game-title { font-family:'Orbitron',sans-serif; font-size:38px; line-height:1; text-align:center; color:var(--orange); text-shadow:0 0 14px rgba(255,153,0,.5); }
+        .game-title span { color:var(--cyan); text-shadow:0 0 14px rgba(0,240,255,.55); }
+        .game-subtitle,.muted { color:rgba(255,255,255,.72); line-height:1.45; font-size:14px; }
+        .menu-grid { display:grid; gap:12px; }
+        .field label,.section-title { display:block; margin-bottom:6px; font:700 12px 'Orbitron',sans-serif; letter-spacing:2px; color:var(--orange); }
+        input,select { width:100%; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); color:#fff; }
+        .action-btn,.quick-btn,.menu-back-btn { width:100%; padding:14px; border-radius:12px; border:1px solid currentColor; background:transparent; color:var(--orange); text-decoration:none; text-align:center; letter-spacing:2px; font-weight:700; cursor:pointer; }
+        .quick-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+        .quick-btn { color:var(--cyan); padding:10px; font-size:12px; }
+        .card,.leaderboard { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px; }
+        .stats-row,.board-row { display:flex; justify-content:space-between; gap:10px; font-size:13px; }
+        .stats-row + .stats-row,.board-row + .board-row { margin-top:8px; }
+        .board-row strong { color:var(--cyan); font-family:'Orbitron',sans-serif; }
+        .instructions { padding-left:18px; color:rgba(255,255,255,.72); line-height:1.45; font-size:14px; }
+        .instructions li + li { margin-top:6px; }
+        .touch-hint { bottom:18px; left:50%; transform:translateX(-50%); z-index:18; padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.55); color:rgba(255,255,255,.75); font-size:12px; border:1px solid rgba(255,255,255,.08); }
+        @media (max-width:600px){ .back-btn{top:12px;left:12px;padding:8px 12px;font-size:9px;} .branding{top:14px;right:12px;font-size:10px;} #hud{top:58px;gap:8px;padding:8px 10px;width:calc(100vw - 20px);} .hud-panel{min-width:0;flex:1;padding:0 4px;} .hud-val{font-size:15px;} .game-title{font-size:28px;} .quick-row{grid-template-columns:1fr;} .touch-hint{bottom:10px;width:calc(100vw - 20px);text-align:center;} }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">◀ VOLVER</a>
+    <div class="branding">By PatSaint</div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="hud">
+        <div class="hud-panel"><span class="hud-label">NICK</span><span id="hudNick" class="hud-val cyan">-</span></div>
+        <div class="hud-panel"><span class="hud-label">PUNTOS</span><span id="scoreDisplay" class="hud-val cyan">0</span></div>
+        <div class="hud-panel"><span class="hud-label">NIVEL</span><span id="levelDisplay" class="hud-val orange">1</span></div>
+        <div class="hud-panel"><span class="hud-label">TOP</span><span id="bestDisplay" class="hud-val green">0</span></div>
+    </div>
+    <div class="touch-hint">ESPACIO / ↑ / CLICK / TAP para volar · ESC pausa</div>
+    <div id="overlay" class="overlay-screen">
+        <div id="homeScreen" class="menu-content">
+            <h1 class="game-title">FLAPPY<br><span>NEON</span></h1>
+            <p class="game-subtitle">Pasá entre tubos neón. El nivel cambia velocidad, gap y frecuencia de spawn EN SERIO, no de adorno.</p>
+            <div class="menu-grid">
+                <div class="field"><label for="nickInput">NICK (MAX 10)</label><input id="nickInput" maxlength="10" placeholder="JUGADOR"></div>
+                <div class="field"><label for="levelSelect">NIVEL INICIAL</label><select id="levelSelect"></select></div>
+            </div>
+            <div class="card" id="levelPreview"></div>
+            <div>
+                <div class="section-title">QUICK GAME</div>
+                <div class="quick-row">
+                    <button class="quick-btn" data-quick-level="2">RELAX</button>
+                    <button class="quick-btn" data-quick-level="5">ARCADE</button>
+                    <button class="quick-btn" data-quick-level="8">HARDCORE</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="section-title">CÓMO JUGAR</div>
+                <ul class="instructions">
+                    <li>PC: Espacio, flecha arriba o click para impulsar.</li>
+                    <li>Touch: tap en cualquier lado del juego.</li>
+                    <li>ESC abre pausa con reanudar, reiniciar o volver al menú.</li>
+                </ul>
+            </div>
+            <button id="startButton" class="action-btn">INICIAR VUELO</button>
+            <div class="leaderboard"><div class="section-title">TOP 10</div><div id="leaderboard"></div></div>
+            <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
+        </div>
+        <div id="pauseScreen" class="menu-content hidden">
+            <h2 class="game-title">PAUSA</h2>
+            <p class="game-subtitle">Respirá. Después volvés a la locura cósmica.</p>
+            <div class="card" id="pauseSummary"></div>
+            <button id="resumeButton" class="action-btn">REANUDAR</button>
+            <button id="restartButton" class="action-btn">REINICIAR</button>
+            <button id="homeButton" class="action-btn">MENÚ INICIAL</button>
+        </div>
+        <div id="gameOverScreen" class="menu-content hidden">
+            <h2 class="game-title">FIN DEL VUELO</h2>
+            <div class="card" id="gameOverSummary"></div>
+            <button id="playAgainButton" class="action-btn">JUGAR OTRA</button>
+            <button id="gameOverHomeButton" class="action-btn">MENÚ INICIAL</button>
+        </div>
+    </div>
+    <script>
+        const STORAGE_KEY = 'bored.flappyNeon.top10';
+        const SETTINGS_KEY = 'bored.flappyNeon.settings';
+        const LEVELS = [
+            { id:1, name:'Calma', speed:2.5, gap:230, spawn:128 },
+            { id:2, name:'Suave', speed:2.8, gap:212, spawn:120 },
+            { id:3, name:'Neo', speed:3.1, gap:196, spawn:112 },
+            { id:4, name:'Arcade', speed:3.4, gap:184, spawn:106 },
+            { id:5, name:'Turbo', speed:3.7, gap:172, spawn:100 },
+            { id:6, name:'Pulse', speed:4.1, gap:160, spawn:94 },
+            { id:7, name:'Rush', speed:4.5, gap:150, spawn:90 },
+            { id:8, name:'Volt', speed:4.9, gap:140, spawn:86 },
+            { id:9, name:'Chaos', speed:5.3, gap:132, spawn:82 },
+            { id:10, name:'Insano', speed:5.8, gap:124, spawn:78 }
+        ];
+        const STATES = { HOME:'HOME', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEOVER' };
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('overlay');
+        const homeScreen = document.getElementById('homeScreen');
+        const pauseScreen = document.getElementById('pauseScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const nickInput = document.getElementById('nickInput');
+        const levelSelect = document.getElementById('levelSelect');
+        const levelPreview = document.getElementById('levelPreview');
+        const leaderboard = document.getElementById('leaderboard');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const levelDisplay = document.getElementById('levelDisplay');
+        const bestDisplay = document.getElementById('bestDisplay');
+        const hudNick = document.getElementById('hudNick');
+        const pauseSummary = document.getElementById('pauseSummary');
+        const gameOverSummary = document.getElementById('gameOverSummary');
+        let state = STATES.HOME, currentLevel = LEVELS[0], animationId = 0, frame = 0, score = 0;
+        let bird = { x:110, y:240, vy:0, r:14, gravity:.42, jump:-7.6 };
+        let pipes = [], particles = [], lastTime = 0, nickname = 'JUGADOR';
+
+        function sanitizeNick(value){ return (value || 'JUGADOR').toUpperCase().replace(/[^A-Z0-9ÁÉÍÓÚÜÑ_-]/gi,'').slice(0,10) || 'JUGADOR'; }
+        function loadTop10(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
+        function saveTop10(entry){ const scores = loadTop10(); scores.push(entry); scores.sort((a,b)=>b.score-a.score || a.level-b.level || a.time-b.time); const top = scores.slice(0,10); localStorage.setItem(STORAGE_KEY, JSON.stringify(top)); return top; }
+        function renderTop10(){ const scores = loadTop10(); bestDisplay.textContent = scores[0]?.score || 0; leaderboard.innerHTML = scores.length ? scores.map((s,i)=>`<div class="board-row"><span>#${i+1} ${s.nick}</span><strong>${s.score}</strong><span>N${s.level}</span></div>`).join('') : '<div class="muted">Todavía no hay vuelos épicos.</div>'; }
+        function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify({ nick:nickname, level:currentLevel.id })); }
+        function loadSettings(){ try { const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); nickname = sanitizeNick(saved.nick); const savedLevel = LEVELS.find(l=>l.id === Number(saved.level)) || LEVELS[0]; currentLevel = savedLevel; } catch {} }
+        function showScreen(screen){ overlay.classList.remove('hidden'); [homeScreen,pauseScreen,gameOverScreen].forEach(node=>node.classList.add('hidden')); screen.classList.remove('hidden'); }
+        function hideOverlay(){ overlay.classList.add('hidden'); }
+        function setLevel(levelId){ currentLevel = LEVELS.find(level=>level.id === Number(levelId)) || LEVELS[0]; levelSelect.value = String(currentLevel.id); levelDisplay.textContent = currentLevel.id; levelPreview.innerHTML = `<div class="stats-row"><span>Nombre</span><strong>${currentLevel.name}</strong></div><div class="stats-row"><span>Velocidad tubos</span><strong>${currentLevel.speed.toFixed(1)}</strong></div><div class="stats-row"><span>Gap</span><strong>${currentLevel.gap}px</strong></div><div class="stats-row"><span>Spawn</span><strong>${currentLevel.spawn} frames</strong></div>`; saveSettings(); }
+        function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; if (state === STATES.HOME) resetBird(); }
+        function resetBird(){ bird.x = Math.max(84, canvas.width * .2); bird.y = canvas.height * .45; bird.vy = 0; }
+        function resetGame(){ score = 0; frame = 0; pipes = []; particles = []; scoreDisplay.textContent = '0'; resetBird(); }
+        function startGame(levelId = currentLevel.id){ nickname = sanitizeNick(nickInput.value); nickInput.value = nickname; hudNick.textContent = nickname; setLevel(levelId); saveSettings(); resetGame(); state = STATES.PLAYING; hideOverlay(); }
+        function pauseGame(){ if (state !== STATES.PLAYING) return; state = STATES.PAUSED; pauseSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntos</span><strong>${score}</strong></div><div class="stats-row"><span>Nivel</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div>`; showScreen(pauseScreen); }
+        function resumeGame(){ if (state !== STATES.PAUSED) return; state = STATES.PLAYING; hideOverlay(); }
+        function goHome(){ state = STATES.HOME; showScreen(homeScreen); renderTop10(); }
+        function finishGame(){ if (state !== STATES.PLAYING) return; state = STATES.GAMEOVER; const top = saveTop10({ nick:nickname, score, level:currentLevel.id, time:Date.now() }); bestDisplay.textContent = top[0]?.score || 0; gameOverSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntaje</span><strong>${score}</strong></div><div class="stats-row"><span>Nivel</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div><div class="stats-row"><span>Top actual</span><strong>${top[0]?.nick || nickname} · ${top[0]?.score || score}</strong></div>`; renderTop10(); showScreen(gameOverScreen); }
+        function flap(){ if (state === STATES.HOME || state === STATES.GAMEOVER) return startGame(); if (state !== STATES.PLAYING) return; bird.vy = bird.jump; spawnParticles(bird.x - 8, bird.y, '#00f0ff', 6); }
+        function spawnParticles(x,y,color,count){ for(let i=0;i<count;i++){ const angle=Math.random()*Math.PI*2; const speed=.5+Math.random()*2.5; particles.push({x,y,vx:Math.cos(angle)*speed-1.2,vy:Math.sin(angle)*speed,size:1+Math.random()*2,alpha:1,color}); } }
+        function spawnPipe(){ const margin = 70; const gap = Math.min(canvas.height - margin * 2, currentLevel.gap); const topHeight = margin + Math.random() * Math.max(40, canvas.height - gap - margin * 2); pipes.push({ x:canvas.width + 40, w:72, top:topHeight, gap, passed:false, glow:Math.random() > .5 ? '#ff9900' : '#ff007f' }); }
+        function update(){ if (state !== STATES.PLAYING) return; frame++; bird.vy += bird.gravity; bird.y += bird.vy; if (frame % currentLevel.spawn === 0) spawnPipe(); if (frame % 2 === 0) spawnParticles(bird.x - 10, bird.y, '#00f0ff', 1); for (let i = pipes.length - 1; i >= 0; i--) { const pipe = pipes[i]; pipe.x -= currentLevel.speed; if (!pipe.passed && pipe.x + pipe.w < bird.x) { pipe.passed = true; score++; scoreDisplay.textContent = String(score); spawnParticles(bird.x, bird.y, '#39ff14', 8); } if (pipe.x + pipe.w < -10) pipes.splice(i,1); const hitX = bird.x + bird.r > pipe.x && bird.x - bird.r < pipe.x + pipe.w; const hitY = bird.y - bird.r < pipe.top || bird.y + bird.r > pipe.top + pipe.gap; if (hitX && hitY) { spawnParticles(bird.x,bird.y,'#ff007f',24); finishGame(); } } if (bird.y + bird.r >= canvas.height || bird.y - bird.r <= 0) { spawnParticles(bird.x,bird.y,'#ff007f',24); finishGame(); } particles = particles.filter(p => (p.x += p.vx, p.y += p.vy, p.alpha -= .025, p.alpha > 0)); }
+        function drawBackground(){ const g = ctx.createLinearGradient(0,0,0,canvas.height); g.addColorStop(0,'#02030a'); g.addColorStop(1,'#000'); ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height); for(let i=0;i<40;i++){ const x=(i*197+frame*0.3)%canvas.width; const y=(i*131)%canvas.height; ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fillRect(x,y,2,2);} }
+        function draw(){ drawBackground(); pipes.forEach(pipe=>{ ctx.save(); ctx.shadowBlur=18; ctx.shadowColor=pipe.glow; ctx.strokeStyle=pipe.glow; ctx.fillStyle=pipe.glow === '#ff9900' ? 'rgba(255,153,0,.12)' : 'rgba(255,0,127,.12)'; ctx.lineWidth=2; ctx.beginPath(); ctx.roundRect(pipe.x, -20, pipe.w, pipe.top + 20, 10); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.roundRect(pipe.x, pipe.top + pipe.gap, pipe.w, canvas.height - pipe.top - pipe.gap + 20, 10); ctx.fill(); ctx.stroke(); ctx.restore(); }); ctx.save(); ctx.translate(bird.x, bird.y); ctx.rotate(Math.max(-.6, Math.min(.8, bird.vy * .06))); ctx.shadowBlur = 18; ctx.shadowColor = '#00f0ff'; ctx.fillStyle = '#00f0ff'; ctx.beginPath(); ctx.arc(0,0,bird.r,0,Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(3,-2,5,0,Math.PI*2); ctx.fill(); ctx.restore(); particles.forEach(p=>{ ctx.save(); ctx.globalAlpha=p.alpha; ctx.fillStyle=p.color; ctx.shadowBlur=10; ctx.shadowColor=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); ctx.restore(); }); if (state === STATES.PAUSED) { ctx.fillStyle='rgba(255,255,255,.18)'; ctx.font="700 34px Orbitron"; ctx.textAlign='center'; ctx.fillText('PAUSA', canvas.width/2, canvas.height/2 - 120); } }
+        function loop(ts){ const delta = ts - lastTime; lastTime = ts; if (delta < 34) { update(); draw(); } animationId = requestAnimationFrame(loop); }
+
+        LEVELS.forEach(level => { const option = document.createElement('option'); option.value = level.id; option.textContent = `${level.id} · ${level.name}`; levelSelect.appendChild(option); });
+        document.getElementById('startButton').addEventListener('click', () => startGame());
+        document.getElementById('resumeButton').addEventListener('click', resumeGame);
+        document.getElementById('restartButton').addEventListener('click', () => startGame());
+        document.getElementById('homeButton').addEventListener('click', goHome);
+        document.getElementById('playAgainButton').addEventListener('click', () => startGame());
+        document.getElementById('gameOverHomeButton').addEventListener('click', goHome);
+        levelSelect.addEventListener('change', e => setLevel(e.target.value));
+        nickInput.addEventListener('input', e => { nickname = sanitizeNick(e.target.value); e.target.value = nickname; hudNick.textContent = nickname; saveSettings(); });
+        document.querySelectorAll('[data-quick-level]').forEach(btn => btn.addEventListener('click', () => startGame(btn.dataset.quickLevel)));
+        window.addEventListener('resize', resize);
+        window.addEventListener('keydown', e => {
+            if (['Space','ArrowUp','Escape'].includes(e.code)) e.preventDefault();
+            if (e.code === 'Escape') { if (state === STATES.PLAYING) pauseGame(); else if (state === STATES.PAUSED) resumeGame(); return; }
+            if (e.code === 'Space' || e.code === 'ArrowUp') flap();
+        });
+        canvas.addEventListener('mousedown', () => flap());
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); if (state === STATES.PAUSED) return; flap(); }, { passive:false });
+        loadSettings(); nickInput.value = nickname; hudNick.textContent = nickname; setLevel(currentLevel.id); resize(); renderTop10(); goHome(); animationId = requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

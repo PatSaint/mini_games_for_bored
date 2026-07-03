@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon 2048 | Juego Retro-Moderno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#000; --panel:rgba(10,10,15,.8); --border:rgba(255,255,255,.08); --green:#39ff14; --cyan:#00f0ff; --pink:#ff007f; --yellow:#ffcc00; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { min-height:100vh; background:#000; color:#fff; font-family:'Outfit',sans-serif; overflow:hidden; display:flex; align-items:center; justify-content:center; padding:72px 14px 18px; }
+        .back-btn,.branding,#hud,.app-shell,.overlay-screen,.menu-content,.swipe-hint { position:absolute; }
+        .back-btn { top:24px; left:24px; z-index:60; text-decoration:none; color:rgba(255,255,255,.45); background:var(--panel); border:1px solid var(--border); padding:10px 18px; border-radius:12px; font:700 11px 'Orbitron',sans-serif; letter-spacing:2px; }
+        .branding { top:24px; right:24px; z-index:60; color:var(--cyan); font:900 14px 'Orbitron',sans-serif; letter-spacing:2px; text-shadow:0 0 12px rgba(0,240,255,.5); }
+        #hud { top:20px; left:50%; transform:translateX(-50%); z-index:20; display:flex; gap:10px; padding:10px 16px; border-radius:18px; background:var(--panel); border:1px solid var(--border); }
+        .hud-panel { min-width:88px; text-align:center; padding:0 8px; border-right:1px solid rgba(255,255,255,.08); }
+        .hud-panel:last-child { border-right:none; }
+        .hud-label { display:block; font-size:9px; letter-spacing:1px; color:rgba(255,255,255,.45); }
+        .hud-val { font:700 18px 'Orbitron',sans-serif; }
+        .green{color:var(--green);text-shadow:0 0 10px rgba(57,255,20,.45)} .cyan{color:var(--cyan);text-shadow:0 0 10px rgba(0,240,255,.45)} .pink{color:var(--pink);text-shadow:0 0 10px rgba(255,0,127,.45)}
+        .app-shell { position:relative; width:min(92vw,520px); display:flex; flex-direction:column; gap:14px; }
+        .board-wrap,.side-card { background:var(--panel); border:1px solid var(--border); border-radius:22px; box-shadow:0 20px 50px rgba(0,0,0,.55); }
+        .side-card { padding:14px; }
+        .board-wrap { padding:14px; }
+        #board { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; touch-action:none; }
+        .cell { aspect-ratio:1; border-radius:18px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); display:flex; align-items:center; justify-content:center; font:700 clamp(20px,5vw,34px) 'Orbitron',sans-serif; transition:transform .14s ease, background .14s ease; }
+        .cell.active { box-shadow:0 0 18px currentColor; }
+        .cell.value-2{color:var(--cyan);background:rgba(0,240,255,.08)} .cell.value-4{color:var(--green);background:rgba(57,255,20,.08)} .cell.value-8{color:var(--yellow);background:rgba(255,204,0,.1)} .cell.value-16{color:#ff9900;background:rgba(255,153,0,.1)} .cell.value-32{color:var(--pink);background:rgba(255,0,127,.12)} .cell.value-64{color:#ff073a;background:rgba(255,7,58,.12)} .cell.value-128{color:#b026ff;background:rgba(176,38,255,.14)} .cell.value-256{color:#7df9ff;background:rgba(125,249,255,.18)} .cell.value-512{color:#fff;background:rgba(0,240,255,.24)} .cell.value-1024{color:#fff;background:rgba(255,0,127,.25)} .cell.value-2048,.cell.value-max{color:#fff;background:rgba(57,255,20,.25)}
+        .mini-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+        .info-box { padding:10px; border-radius:14px; border:1px solid rgba(255,255,255,.06); background:rgba(255,255,255,.03); }
+        .info-label { font:700 10px 'Orbitron',sans-serif; letter-spacing:1px; color:rgba(255,255,255,.5); display:block; margin-bottom:4px; }
+        .info-value { font:700 16px 'Orbitron',sans-serif; }
+        .instructions { color:rgba(255,255,255,.72); line-height:1.45; font-size:14px; padding-left:18px; }
+        .instructions li + li { margin-top:6px; }
+        .overlay-screen { inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.84); backdrop-filter:blur(8px); }
+        .hidden { display:none !important; }
+        .menu-content { width:min(94vw,560px); max-height:88vh; overflow:auto; background:var(--panel); border:1px solid var(--border); border-radius:24px; padding:28px; display:flex; flex-direction:column; gap:16px; box-shadow:0 20px 50px rgba(0,0,0,.6); }
+        .game-title { text-align:center; font:900 38px 'Orbitron',sans-serif; line-height:1; color:var(--green); text-shadow:0 0 14px rgba(57,255,20,.5); }
+        .game-title span { color:var(--cyan); text-shadow:0 0 14px rgba(0,240,255,.55); }
+        .game-subtitle,.muted { color:rgba(255,255,255,.72); line-height:1.45; font-size:14px; }
+        .field label,.section-title { display:block; margin-bottom:6px; color:var(--green); font:700 12px 'Orbitron',sans-serif; letter-spacing:2px; }
+        input,select,button,a { font-family:'Orbitron',sans-serif; }
+        input,select { width:100%; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); color:#fff; }
+        .action-btn,.quick-btn,.menu-back-btn { width:100%; padding:14px; border-radius:12px; border:1px solid currentColor; background:transparent; color:var(--green); cursor:pointer; text-decoration:none; text-align:center; letter-spacing:2px; font-weight:700; }
+        .quick-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+        .quick-btn { color:var(--cyan); padding:10px; font-size:12px; }
+        .card,.leaderboard { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px; }
+        .stats-row,.board-row { display:flex; justify-content:space-between; gap:10px; font-size:13px; }
+        .stats-row + .stats-row,.board-row + .board-row { margin-top:8px; }
+        .board-row strong { color:var(--cyan); font-family:'Orbitron',sans-serif; }
+        .swipe-hint { bottom:10px; left:50%; transform:translateX(-50%); z-index:15; padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.55); color:rgba(255,255,255,.75); font-size:12px; border:1px solid rgba(255,255,255,.08); }
+        @media (max-width:600px){ .back-btn{top:12px;left:12px;padding:8px 12px;font-size:9px;} .branding{top:14px;right:12px;font-size:10px;} #hud{top:58px;gap:6px;padding:8px 8px;width:calc(100vw - 20px);} .hud-panel{min-width:0;flex:1;padding:0 4px;} .hud-val{font-size:14px;} .app-shell{width:calc(100vw - 14px);} .game-title{font-size:28px;} .quick-row{grid-template-columns:1fr;} .swipe-hint{width:calc(100vw - 20px);text-align:center;} }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">◀ VOLVER</a>
+    <div class="branding">By PatSaint</div>
+    <div id="hud">
+        <div class="hud-panel"><span class="hud-label">NICK</span><span id="hudNick" class="hud-val cyan">-</span></div>
+        <div class="hud-panel"><span class="hud-label">PUNTOS</span><span id="scoreDisplay" class="hud-val green">0</span></div>
+        <div class="hud-panel"><span class="hud-label">OBJETIVO</span><span id="goalDisplay" class="hud-val cyan">2048</span></div>
+        <div class="hud-panel"><span class="hud-label">TOP</span><span id="bestDisplay" class="hud-val pink">0</span></div>
+    </div>
+    <div class="app-shell">
+        <div class="side-card"><div class="mini-grid"><div class="info-box"><span class="info-label">NIVEL</span><span id="levelDisplay" class="info-value cyan">1</span></div><div class="info-box"><span class="info-label">MEJOR FICHA</span><span id="maxTileDisplay" class="info-value green">0</span></div><div class="info-box"><span class="info-label">MOVIMIENTOS</span><span id="movesDisplay" class="info-value pink">0</span></div><div class="info-box"><span class="info-label">ESTADO</span><span id="statusDisplay" class="info-value cyan">LISTO</span></div></div></div>
+        <div class="board-wrap"><div id="board"></div></div>
+        <div class="side-card"><ul class="instructions"><li>Juntá fichas iguales para llegar al objetivo del nivel.</li><li>PC: flechas o WASD.</li><li>Móvil/tablet: deslizá sobre el tablero.</li><li>ESC pausa y abre menú.</li></ul></div>
+    </div>
+    <div class="swipe-hint">Flechas / WASD / swipe · ESC pausa</div>
+    <div id="overlay" class="overlay-screen">
+        <div id="homeScreen" class="menu-content">
+            <h1 class="game-title">NEON <span>2048</span></h1>
+            <p class="game-subtitle">La versión anterior era confusa. Esta NO: tablero claro, objetivo visible, niveles entendibles, teclado y swipe.</p>
+            <div class="field"><label for="nickInput">NICK (MAX 10)</label><input id="nickInput" maxlength="10" placeholder="JUGADOR"></div>
+            <div class="field"><label for="levelSelect">NIVEL INICIAL</label><select id="levelSelect"></select></div>
+            <div class="card" id="levelPreview"></div>
+            <div><div class="section-title">QUICK GAME</div><div class="quick-row"><button class="quick-btn" data-quick-level="1">CLÁSICO</button><button class="quick-btn" data-quick-level="4">RUSH</button><button class="quick-btn" data-quick-level="7">SURVIVE</button></div></div>
+            <div class="card"><div class="section-title">CÓMO SE ENTIENDE</div><ul class="instructions"><li>Cada movimiento desplaza TODO en una dirección.</li><li>Dos fichas iguales se fusionan en una más grande.</li><li>Después aparece una nueva ficha.</li><li>Si no quedan movimientos, perdiste.</li></ul></div>
+            <button id="startButton" class="action-btn">INICIAR PARTIDA</button>
+            <div class="leaderboard"><div class="section-title">TOP 10</div><div id="leaderboard"></div></div>
+            <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
+        </div>
+        <div id="pauseScreen" class="menu-content hidden"><h2 class="game-title">PAUSA</h2><div class="card" id="pauseSummary"></div><button id="resumeButton" class="action-btn">REANUDAR</button><button id="restartButton" class="action-btn">REINICIAR</button><button id="homeButton" class="action-btn">MENÚ INICIAL</button></div>
+        <div id="gameOverScreen" class="menu-content hidden"><h2 id="gameOverTitle" class="game-title">RESULTADO</h2><div class="card" id="gameOverSummary"></div><button id="playAgainButton" class="action-btn">JUGAR OTRA</button><button id="gameOverHomeButton" class="action-btn">MENÚ INICIAL</button></div>
+    </div>
+    <script>
+        const STORAGE_KEY = 'bored.2048.top10';
+        const SETTINGS_KEY = 'bored.2048.settings';
+        const LEVELS = [
+            { id:1, name:'Clásico', target:256, startTiles:2, fourChance:.10 },
+            { id:2, name:'Pulse', target:512, startTiles:2, fourChance:.12 },
+            { id:3, name:'Neo', target:512, startTiles:3, fourChance:.15 },
+            { id:4, name:'Rush', target:1024, startTiles:3, fourChance:.18 },
+            { id:5, name:'Volt', target:1024, startTiles:4, fourChance:.20 },
+            { id:6, name:'Survive', target:2048, startTiles:4, fourChance:.22 },
+            { id:7, name:'Chaos', target:2048, startTiles:5, fourChance:.24 },
+            { id:8, name:'Master', target:2048, startTiles:5, fourChance:.26 },
+            { id:9, name:'Hyper', target:4096, startTiles:6, fourChance:.28 },
+            { id:10, name:'God Mode', target:4096, startTiles:6, fourChance:.32 }
+        ];
+        const STATES = { HOME:'HOME', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEOVER' };
+        const boardElement = document.getElementById('board'); const overlay = document.getElementById('overlay'); const homeScreen = document.getElementById('homeScreen'); const pauseScreen = document.getElementById('pauseScreen'); const gameOverScreen = document.getElementById('gameOverScreen'); const nickInput = document.getElementById('nickInput'); const levelSelect = document.getElementById('levelSelect'); const leaderboard = document.getElementById('leaderboard'); const levelPreview = document.getElementById('levelPreview'); const pauseSummary = document.getElementById('pauseSummary'); const gameOverSummary = document.getElementById('gameOverSummary'); const gameOverTitle = document.getElementById('gameOverTitle');
+        const hudNick = document.getElementById('hudNick'); const scoreDisplay = document.getElementById('scoreDisplay'); const goalDisplay = document.getElementById('goalDisplay'); const bestDisplay = document.getElementById('bestDisplay'); const levelDisplay = document.getElementById('levelDisplay'); const maxTileDisplay = document.getElementById('maxTileDisplay'); const movesDisplay = document.getElementById('movesDisplay'); const statusDisplay = document.getElementById('statusDisplay');
+        let state = STATES.HOME, currentLevel = LEVELS[0], nickname = 'JUGADOR', board = [], score = 0, moves = 0, maxTile = 0, won = false, touchStart = null;
+        function sanitizeNick(value){ return (value || 'JUGADOR').toUpperCase().replace(/[^A-Z0-9ÁÉÍÓÚÜÑ_-]/gi,'').slice(0,10) || 'JUGADOR'; }
+        function loadTop10(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
+        function saveTop10(entry){ const scores = loadTop10(); scores.push(entry); scores.sort((a,b)=>b.score-a.score || b.maxTile-a.maxTile || a.time-b.time); const top = scores.slice(0,10); localStorage.setItem(STORAGE_KEY, JSON.stringify(top)); return top; }
+        function renderTop10(){ const scores = loadTop10(); bestDisplay.textContent = scores[0]?.score || 0; leaderboard.innerHTML = scores.length ? scores.map((s,i)=>`<div class="board-row"><span>#${i+1} ${s.nick}</span><strong>${s.score}</strong><span>${s.maxTile}</span></div>`).join('') : '<div class="muted">Todavía no hay runs guardadas.</div>'; }
+        function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify({ nick:nickname, level:currentLevel.id })); }
+        function loadSettings(){ try { const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); nickname = sanitizeNick(saved.nick); currentLevel = LEVELS.find(level=>level.id === Number(saved.level)) || LEVELS[0]; } catch {} }
+        function showScreen(screen){ overlay.classList.remove('hidden'); [homeScreen,pauseScreen,gameOverScreen].forEach(node=>node.classList.add('hidden')); screen.classList.remove('hidden'); }
+        function hideOverlay(){ overlay.classList.add('hidden'); }
+        function setLevel(levelId){ currentLevel = LEVELS.find(level=>level.id === Number(levelId)) || LEVELS[0]; levelSelect.value = String(currentLevel.id); levelDisplay.textContent = currentLevel.id; goalDisplay.textContent = currentLevel.target; levelPreview.innerHTML = `<div class="stats-row"><span>Nombre</span><strong>${currentLevel.name}</strong></div><div class="stats-row"><span>Objetivo</span><strong>${currentLevel.target}</strong></div><div class="stats-row"><span>Fichas iniciales</span><strong>${currentLevel.startTiles}</strong></div><div class="stats-row"><span>Prob. de 4</span><strong>${Math.round(currentLevel.fourChance * 100)}%</strong></div>`; saveSettings(); }
+        function emptyBoard(){ return Array.from({ length:4 }, () => Array(4).fill(0)); }
+        function randomTile(){ return Math.random() < currentLevel.fourChance ? 4 : 2; }
+        function getEmptyCells(){ const cells = []; for(let r=0;r<4;r++) for(let c=0;c<4;c++) if (!board[r][c]) cells.push({r,c}); return cells; }
+        function spawnTile(){ const empties = getEmptyCells(); if (!empties.length) return; const { r, c } = empties[Math.floor(Math.random() * empties.length)]; board[r][c] = randomTile(); }
+        function resetGame(levelId = currentLevel.id){ nickname = sanitizeNick(nickInput.value); nickInput.value = nickname; hudNick.textContent = nickname; setLevel(levelId); board = emptyBoard(); score = 0; moves = 0; maxTile = 0; won = false; scoreDisplay.textContent = '0'; movesDisplay.textContent = '0'; statusDisplay.textContent = 'JUGANDO'; for(let i=0;i<currentLevel.startTiles;i++) spawnTile(); refreshStats(); renderBoard(); }
+        function refreshStats(){ maxTile = Math.max(...board.flat(), 0); maxTileDisplay.textContent = String(maxTile); scoreDisplay.textContent = String(score); movesDisplay.textContent = String(moves); statusDisplay.textContent = state === STATES.PAUSED ? 'PAUSA' : state === STATES.GAMEOVER ? 'FIN' : 'JUGANDO'; }
+        function renderBoard(){ boardElement.innerHTML = ''; board.flat().forEach(value => { const cell = document.createElement('div'); cell.className = 'cell' + (value ? ` active value-${value <= 2048 ? value : 'max'}` : ''); cell.textContent = value || ''; boardElement.appendChild(cell); }); }
+        function compress(line){ const filtered = line.filter(Boolean); const merged = []; let gained = 0; for(let i=0;i<filtered.length;i++){ if (filtered[i] && filtered[i] === filtered[i+1]) { const value = filtered[i] * 2; merged.push(value); gained += value; i++; } else merged.push(filtered[i]); } while (merged.length < 4) merged.push(0); return { line:merged, gained }; }
+        function cloneBoard(){ return board.map(row => [...row]); }
+        function moveLeft(){ const previous = cloneBoard(); let gained = 0; board = board.map(row => { const result = compress(row); gained += result.gained; return result.line; }); return finalizeMove(previous, gained); }
+        function reverseRows(source){ return source.map(row => [...row].reverse()); }
+        function transpose(source){ return source[0].map((_, c) => source.map(row => row[c])); }
+        function moveRight(){ const previous = cloneBoard(); let gained = 0; board = reverseRows(board).map(row => { const result = compress(row); gained += result.gained; return result.line; }); board = reverseRows(board); return finalizeMove(previous, gained); }
+        function moveUp(){ const previous = cloneBoard(); let gained = 0; board = transpose(board).map(column => { const result = compress(column); gained += result.gained; return result.line; }); board = transpose(board); return finalizeMove(previous, gained); }
+        function moveDown(){ const previous = cloneBoard(); let gained = 0; board = transpose(board).map(column => { const result = compress([...column].reverse()); gained += result.gained; return result.line.reverse(); }); board = transpose(board); return finalizeMove(previous, gained); }
+        function finalizeMove(previous, gained){ const changed = JSON.stringify(previous) !== JSON.stringify(board); if (!changed) return false; score += gained; moves++; spawnTile(); refreshStats(); renderBoard(); if (!won && maxTile >= currentLevel.target) { won = true; finishGame(true); return true; } if (!hasMoves()) { finishGame(false); return true; } return true; }
+        function hasMoves(){ if (getEmptyCells().length) return true; for(let r=0;r<4;r++) for(let c=0;c<4;c++){ const value = board[r][c]; if (board[r][c+1] === value || (board[r+1] || [])[c] === value) return true; } return false; }
+        function startGame(levelId = currentLevel.id){ state = STATES.PLAYING; resetGame(levelId); hideOverlay(); }
+        function pauseGame(){ if (state !== STATES.PLAYING) return; state = STATES.PAUSED; refreshStats(); pauseSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntos</span><strong>${score}</strong></div><div class="stats-row"><span>Objetivo</span><strong>${currentLevel.target}</strong></div><div class="stats-row"><span>Movimientos</span><strong>${moves}</strong></div>`; showScreen(pauseScreen); }
+        function resumeGame(){ if (state !== STATES.PAUSED) return; state = STATES.PLAYING; refreshStats(); hideOverlay(); }
+        function goHome(){ state = STATES.HOME; statusDisplay.textContent = 'LISTO'; renderTop10(); showScreen(homeScreen); }
+        function finishGame(victory){ state = STATES.GAMEOVER; refreshStats(); const top = saveTop10({ nick:nickname, score, level:currentLevel.id, maxTile, time:Date.now() }); bestDisplay.textContent = top[0]?.score || 0; gameOverTitle.textContent = victory ? 'OBJETIVO LOGRADO' : 'SIN MOVIMIENTOS'; gameOverSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntaje</span><strong>${score}</strong></div><div class="stats-row"><span>Mayor ficha</span><strong>${maxTile}</strong></div><div class="stats-row"><span>Nivel</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div>`; renderTop10(); showScreen(gameOverScreen); }
+        function handleMove(direction){ if (state !== STATES.PLAYING) return; const actions = { left:moveLeft, right:moveRight, up:moveUp, down:moveDown }; actions[direction]?.(); }
+        LEVELS.forEach(level => { const option = document.createElement('option'); option.value = level.id; option.textContent = `${level.id} · ${level.name}`; levelSelect.appendChild(option); });
+        document.getElementById('startButton').addEventListener('click', () => startGame()); document.getElementById('resumeButton').addEventListener('click', resumeGame); document.getElementById('restartButton').addEventListener('click', () => startGame()); document.getElementById('homeButton').addEventListener('click', goHome); document.getElementById('playAgainButton').addEventListener('click', () => startGame()); document.getElementById('gameOverHomeButton').addEventListener('click', goHome);
+        levelSelect.addEventListener('change', e => setLevel(e.target.value)); nickInput.addEventListener('input', e => { nickname = sanitizeNick(e.target.value); e.target.value = nickname; hudNick.textContent = nickname; saveSettings(); }); document.querySelectorAll('[data-quick-level]').forEach(btn => btn.addEventListener('click', () => startGame(btn.dataset.quickLevel)));
+        window.addEventListener('keydown', e => { if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','Escape'].includes(e.code)) e.preventDefault(); if (e.code === 'Escape') { if (state === STATES.PLAYING) pauseGame(); else if (state === STATES.PAUSED) resumeGame(); return; } if (state === STATES.HOME || state === STATES.GAMEOVER) { if (e.code === 'Space') startGame(); return; } if (state !== STATES.PLAYING) return; if (e.code === 'ArrowLeft' || e.code === 'KeyA') handleMove('left'); else if (e.code === 'ArrowRight' || e.code === 'KeyD') handleMove('right'); else if (e.code === 'ArrowUp' || e.code === 'KeyW') handleMove('up'); else if (e.code === 'ArrowDown' || e.code === 'KeyS') handleMove('down'); });
+        boardElement.addEventListener('touchstart', e => { if (!e.touches[0]) return; touchStart = { x:e.touches[0].clientX, y:e.touches[0].clientY }; }, { passive:true });
+        boardElement.addEventListener('touchend', e => { if (state !== STATES.PLAYING || !touchStart || !e.changedTouches[0]) return; const dx = e.changedTouches[0].clientX - touchStart.x; const dy = e.changedTouches[0].clientY - touchStart.y; touchStart = null; if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return; handleMove(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up')); }, { passive:true });
+        loadSettings(); nickInput.value = nickname; hudNick.textContent = nickname; setLevel(currentLevel.id); board = emptyBoard(); renderBoard(); renderTop10(); goHome();
+    </script>
+</body>
+</html>
