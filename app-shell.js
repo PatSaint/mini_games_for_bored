@@ -12,6 +12,19 @@
         slots: []
     };
 
+    const soundState = (() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem('bored.soundPrefs') || '{}');
+            return {
+                muted: Boolean(saved.muted),
+                volume: Number.isFinite(Number(saved.volume)) ? Math.max(0, Math.min(1, Number(saved.volume))) : 0.75,
+                slots: []
+            };
+        } catch {
+            return { muted: false, volume: 0.75, slots: [] };
+        }
+    })();
+
     function ensureSharedStyles() {
         if (document.getElementById('bored-app-shell-styles')) return;
         const style = document.createElement('style');
@@ -56,6 +69,68 @@
             .install-btn:hover { border-color: rgba(0,240,255,.85); color: #00f0ff; box-shadow: 0 0 12px rgba(0,240,255,.22); }
             .install-btn[hidden], .install-msg[hidden] { display: none !important; }
             .install-msg {
+                font-size: 12px;
+                line-height: 1.45;
+                color: rgba(255,255,255,.68);
+                text-align: center;
+            }
+            .sound-slot {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                align-items: stretch;
+            }
+            .sound-panel {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px 14px;
+                border-radius: 14px;
+                border: 1px solid rgba(255,255,255,.08);
+                background: rgba(255,255,255,.03);
+            }
+            .sound-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 10px;
+            }
+            .sound-label {
+                font: 700 11px 'Orbitron', sans-serif;
+                letter-spacing: 2px;
+                color: #00f0ff;
+                text-shadow: 0 0 10px rgba(0,240,255,.25);
+            }
+            .sound-state {
+                font: 700 11px 'Orbitron', sans-serif;
+                letter-spacing: 1px;
+                color: rgba(255,255,255,.72);
+            }
+            .sound-row {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+            .sound-btn {
+                min-width: 116px;
+                padding: 12px 14px;
+                border-radius: 12px;
+                border: 1px solid rgba(0,240,255,.55);
+                background: rgba(0,240,255,.08);
+                color: #fff;
+                font: 700 11px 'Orbitron', sans-serif;
+                letter-spacing: 1.4px;
+                cursor: pointer;
+                transition: .2s ease;
+            }
+            .sound-btn:hover { box-shadow: 0 0 12px rgba(0,240,255,.22); }
+            .sound-range {
+                width: 100%;
+                accent-color: #00f0ff;
+            }
+            .sound-msg {
                 font-size: 12px;
                 line-height: 1.45;
                 color: rgba(255,255,255,.68);
@@ -160,6 +235,118 @@
         clearNicknameWarning
     };
 
+    function saveSoundPrefs() {
+        try {
+            localStorage.setItem('bored.soundPrefs', JSON.stringify({ muted: soundState.muted, volume: soundState.volume }));
+        } catch {
+            // no-op
+        }
+    }
+
+    function syncAudioMaster() {
+        if (!audioState.master) return;
+        audioState.master.gain.value = soundState.muted ? 0 : Math.max(0, Math.min(1, soundState.volume));
+    }
+
+    function getSoundLabel() {
+        return soundState.muted || soundState.volume <= 0 ? 'MUTED' : `ON ${Math.round(soundState.volume * 100)}%`;
+    }
+
+    function renderSoundState() {
+        const label = getSoundLabel();
+        const message = soundState.muted
+            ? 'El audio está apagado. Subí el volumen o activalo para escuchar los cues.'
+            : `Volumen ${Math.round(soundState.volume * 100)}%.`;
+
+        soundState.slots.forEach(({ button, range, state, feedback }) => {
+            button.textContent = soundState.muted ? 'ACTIVAR SONIDO' : 'MUTEAR SONIDO';
+            button.setAttribute('aria-pressed', String(!soundState.muted));
+            range.value = String(Math.round(soundState.volume * 100));
+            state.textContent = label;
+            feedback.textContent = message;
+            feedback.hidden = false;
+        });
+    }
+
+    function setSoundMuted(nextMuted) {
+        soundState.muted = Boolean(nextMuted);
+        saveSoundPrefs();
+        syncAudioMaster();
+        renderSoundState();
+    }
+
+    function setSoundVolume(nextVolume) {
+        soundState.volume = Math.max(0, Math.min(1, Number(nextVolume) || 0));
+        if (soundState.volume > 0 && soundState.muted) {
+            soundState.muted = false;
+        }
+        if (soundState.volume <= 0) {
+            soundState.muted = true;
+        }
+        saveSoundPrefs();
+        syncAudioMaster();
+        renderSoundState();
+    }
+
+    function toggleSoundMute() {
+        setSoundMuted(!soundState.muted);
+    }
+
+    function setupSoundSlots() {
+        ensureSharedStyles();
+        const hosts = Array.from(document.querySelectorAll('.menu-content, .hub-actions[data-install-slot]'));
+        soundState.slots = hosts
+            .filter((host) => host && !host.querySelector('.sound-slot'))
+            .map((host) => {
+                const slot = document.createElement('div');
+                slot.className = 'sound-slot';
+
+                const panel = document.createElement('div');
+                panel.className = 'sound-panel';
+
+                const head = document.createElement('div');
+                head.className = 'sound-head';
+                head.innerHTML = '<span class="sound-label">SONIDO</span>';
+
+                const state = document.createElement('span');
+                state.className = 'sound-state';
+                head.appendChild(state);
+
+                const row = document.createElement('div');
+                row.className = 'sound-row';
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'sound-btn';
+
+                const range = document.createElement('input');
+                range.type = 'range';
+                range.min = '0';
+                range.max = '100';
+                range.step = '1';
+                range.className = 'sound-range';
+
+                const feedback = document.createElement('p');
+                feedback.className = 'sound-msg';
+
+                button.addEventListener('click', () => toggleSoundMute());
+                range.addEventListener('input', () => setSoundVolume(Number(range.value) / 100));
+
+                row.appendChild(button);
+                row.appendChild(range);
+                panel.appendChild(head);
+                panel.appendChild(row);
+                panel.appendChild(feedback);
+                slot.appendChild(panel);
+                host.appendChild(slot);
+
+                return { host, slot, panel, button, range, state, feedback };
+            });
+
+        renderSoundState();
+        syncAudioMaster();
+    }
+
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
     const audioState = {
         ctx: null,
@@ -247,8 +434,8 @@
         if (!audioState.ctx) {
             audioState.ctx = new AudioContextCtor();
             audioState.master = audioState.ctx.createGain();
-            audioState.master.gain.value = 0.75;
             audioState.master.connect(audioState.ctx.destination);
+            syncAudioMaster();
         }
         return audioState.ctx;
     }
@@ -291,7 +478,7 @@
     function playCue(cueName) {
         const cue = CUE_DEFS[cueName];
         const ctx = ensureAudioContext();
-        if (!cue || !ctx) return false;
+        if (!cue || !ctx || soundState.muted || soundState.volume <= 0) return false;
         const nowMs = performance.now();
         const throttleMs = cue.throttleMs ?? 0;
         const last = audioState.lastPlayed.get(cueName) || 0;
@@ -344,7 +531,12 @@
         play: playCue,
         startLoop,
         stopLoop,
-        stopAllLoops
+        stopAllLoops,
+        setMuted: setSoundMuted,
+        toggleMute: toggleSoundMute,
+        setVolume: setSoundVolume,
+        get muted() { return soundState.muted; },
+        get volume() { return soundState.volume; }
     };
 
     function getInstallMessage() {
@@ -456,10 +648,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             applyAdaptiveContent();
             setupInstallSlots();
+            setupSoundSlots();
         }, { once: true });
     } else {
         applyAdaptiveContent();
         setupInstallSlots();
+        setupSoundSlots();
     }
 
     registerServiceWorker();
