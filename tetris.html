@@ -15,7 +15,7 @@
 </head>
 <body>
     <!-- Botón Volver al Menú Principal -->
-    <a href="index.html" class="back-btn">◀ VOLVER</a>
+    <a href="index.html" class="back-btn" onclick="return confirm('¿Seguro que querés salir?')">◀ VOLVER</a>
     <div class="branding">By PatSaint</div>
 
     <!-- Contenedor Principal del Juego -->
@@ -192,9 +192,9 @@
         </div>
         <!-- Parte Derecha: Acciones -->
         <div class="gamepad-right">
-            <button id="btnRotate" class="action-btn-circle btn-pink-glow">ROTAR</button>
-            <button id="btnDrop" class="action-btn-circle btn-blue-glow">CAÍDA</button>
             <button id="mobilePauseButton" class="action-btn-circle btn-yellow-glow">PAUSA</button>
+            <button id="btnDrop" class="action-btn-circle btn-blue-glow">CAÍDA</button>
+            <button id="btnRotate" class="action-btn-circle btn-pink-glow">ROTAR</button>
         </div>
     </div>
 
