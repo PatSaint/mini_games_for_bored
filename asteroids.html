@@ -519,57 +519,57 @@
             <h1 class="game-title">NEON <span>ASTEROIDS</span></h1>
             <p class="game-subtitle" data-touch-text="Ingresá tu nick, elegí el nivel inicial y limpiá el cinturón. Tocá INICIAR y usá giro, empuje, fuego y pausa desde los botones táctiles." data-desktop-text="Ingresá tu nick, elegí el nivel inicial y limpiá el cinturón. ESC pausa y en táctil usá giro, empuje, fuego y pausa.">Ingresá tu nick, elegí el nivel inicial y limpiá el cinturón. ESC pausa y en táctil usá giro, empuje, fuego y pausa.</p>
             <div class="level-selector">
-                <label for="nicknameInput">NICKNAME (MAX 10)</label>
+                <label id="nicknameLabel" for="nicknameInput">NICKNAME (MAX 10)</label>
                 <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" autocomplete="off">
             </div>
             <div class="level-selector">
-                <label for="levelSelect">NIVEL INICIAL</label>
+                <label id="levelLabel" for="levelSelect">NIVEL INICIAL</label>
                 <select id="levelSelect">
                     <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
                 </select>
             </div>
             <div class="stats-preview">
                 <div class="preview-item">
-                    <span class="preview-lbl">Asteroides Iniciales:</span>
+                    <span id="previewCountLabel" class="preview-lbl">Asteroides Iniciales:</span>
                     <span id="previewCount" class="preview-val">--</span>
                 </div>
                 <div class="preview-item">
-                    <span class="preview-lbl">Velocidad orbital:</span>
+                    <span id="speedPreviewLabel" class="preview-lbl">Velocidad orbital:</span>
                     <span id="speedPreview" class="preview-val">--</span>
                 </div>
             </div>
             <div class="controls-guide">
                 <div class="control-row" data-device-show="desktop">
-                    <span>Rotar nave:</span>
+                    <span id="desktopRotateLabel">Rotar nave:</span>
                     <span class="control-key">◄ / ► (o A / D)</span>
                 </div>
                 <div class="control-row" data-device-show="desktop">
-                    <span>Propulsión (Empuje):</span>
+                    <span id="desktopThrustLabel">Propulsión (Empuje):</span>
                     <span class="control-key">▲ (o W)</span>
                 </div>
                 <div class="control-row" data-device-show="desktop">
-                    <span>Disparar Láser:</span>
+                    <span id="desktopShootLabel">Disparar Láser:</span>
                     <span class="control-key">ESPACIO</span>
                 </div>
                 <div class="control-row" data-device-show="touch">
-                    <span>Rotar nave:</span>
+                    <span id="touchRotateLabel">Rotar nave:</span>
                     <span class="control-key">BOTONES ◄ / ►</span>
                 </div>
                 <div class="control-row" data-device-show="touch">
-                    <span>Propulsión:</span>
-                    <span class="control-key">BOTÓN EMPUJE</span>
+                    <span id="touchThrustLabel">Propulsión:</span>
+                    <span id="touchThrustKey" class="control-key">BOTÓN EMPUJE</span>
                 </div>
                 <div class="control-row" data-device-show="touch">
-                    <span>Disparo:</span>
-                    <span class="control-key">BOTÓN FUEGO</span>
+                    <span id="touchShootLabel">Disparo:</span>
+                    <span id="touchShootKey" class="control-key">BOTÓN FUEGO</span>
                 </div>
                 <div class="control-row">
-                    <span>Pausa:</span>
+                    <span id="pauseLabel">Pausa:</span>
                     <span class="control-key" data-touch-text="BOTÓN PAUSA" data-desktop-text="ESC / PAUSA">ESC / PAUSA</span>
                 </div>
             </div>
             <div class="stats-preview">
-                <div class="preview-item"><span class="preview-lbl">Top 10 Neon:</span><span class="preview-val">LOCAL</span></div>
+                <div class="preview-item"><span id="startTopLabel" class="preview-lbl">Top 10 Neon:</span><span id="startTopValue" class="preview-val">LOCAL</span></div>
                 <div id="leaderboardStart" class="leaderboard-list"></div>
             </div>
             <div class="quick-links">
@@ -586,11 +586,11 @@
             <h2 class="game-title">PAUSA <span>NEON</span></h2>
             <p class="game-subtitle">La nave quedó en espera. Reanudá con ESC o elegí otro destino.</p>
             <div class="stats-preview">
-                <div class="preview-item"><span class="preview-lbl">Piloto:</span><span id="pauseNick" class="preview-val">PLAYER</span></div>
-                <div class="preview-item"><span class="preview-lbl">Puntaje actual:</span><span id="pauseScore" class="preview-val">0</span></div>
+                <div class="preview-item"><span id="pauseNickLabel" class="preview-lbl">Piloto:</span><span id="pauseNick" class="preview-val">PLAYER</span></div>
+                <div class="preview-item"><span id="pauseScoreLabel" class="preview-lbl">Puntaje actual:</span><span id="pauseScore" class="preview-val">0</span></div>
             </div>
             <div class="stats-preview">
-                <div class="preview-item"><span class="preview-lbl">Top 10:</span><span class="preview-val">LOCAL</span></div>
+                <div class="preview-item"><span id="pauseTopLabel" class="preview-lbl">Top 10:</span><span id="pauseTopValue" class="preview-val">LOCAL</span></div>
                 <div id="leaderboardPause" class="leaderboard-list"></div>
             </div>
             <div class="quick-links">
@@ -600,7 +600,7 @@
             </div>
             <button id="resumeButton" class="action-btn">REANUDAR</button>
             <button id="pauseRestartButton" class="action-btn">REINICIAR</button>
-            <a href="index.html" class="menu-back-btn">IR AL HOME</a>
+            <a id="pauseHomeButton" href="index.html" class="menu-back-btn">IR AL HOME</a>
         </div>
 
         <!-- End Screen (Win/Loss) -->
@@ -608,16 +608,16 @@
             <h2 id="endTitle" class="game-title">FIN DEL JUEGO</h2>
             <div class="stats-preview">
                 <div class="preview-item">
-                    <span class="preview-lbl">Puntaje Final:</span>
+                    <span id="finalScoreLabel" class="preview-lbl">Puntaje Final:</span>
                     <span id="finalScore" class="preview-val">0</span>
                 </div>
                 <div class="preview-item">
-                    <span class="preview-lbl">Mejor Puntaje:</span>
+                    <span id="finalHighScoreLabel" class="preview-lbl">Mejor Puntaje:</span>
                     <span id="finalHighScore" class="preview-val">0</span>
                 </div>
             </div>
             <div class="stats-preview">
-                <div class="preview-item"><span class="preview-lbl">Top 10:</span><span class="preview-val">LOCAL</span></div>
+                <div class="preview-item"><span id="endTopLabel" class="preview-lbl">Top 10:</span><span id="endTopValue" class="preview-val">LOCAL</span></div>
                 <div id="leaderboardEnd" class="leaderboard-list"></div>
             </div>
             <div class="quick-links">
@@ -1219,11 +1219,37 @@
             document.querySelector('.back-btn').textContent = lang === 'en' ? '◀ BACK' : '◀ VOLVER';
             document.getElementById('btnThrust').textContent = lang === 'en' ? 'THRUST' : 'EMPUJE';
             document.getElementById('btnPause').textContent = lang === 'en' ? 'PAUSE' : 'PAUSA';
+            document.getElementById('nicknameLabel').textContent = 'NICKNAME (MAX 10)';
+            nicknameInput.placeholder = lang === 'en' ? 'PLAYER' : 'JUGADOR';
+            document.getElementById('levelLabel').textContent = lang === 'en' ? 'START LEVEL' : 'NIVEL INICIAL';
+            document.getElementById('previewCountLabel').textContent = lang === 'en' ? 'Starting asteroids:' : 'Asteroides Iniciales:';
+            document.getElementById('speedPreviewLabel').textContent = lang === 'en' ? 'Orbital speed:' : 'Velocidad orbital:';
+            document.getElementById('desktopRotateLabel').textContent = lang === 'en' ? 'Rotate ship:' : 'Rotar nave:';
+            document.getElementById('desktopThrustLabel').textContent = lang === 'en' ? 'Thrust:' : 'Propulsión (Empuje):';
+            document.getElementById('desktopShootLabel').textContent = lang === 'en' ? 'Fire laser:' : 'Disparar Láser:';
+            document.getElementById('touchRotateLabel').textContent = lang === 'en' ? 'Rotate ship:' : 'Rotar nave:';
+            document.getElementById('touchThrustLabel').textContent = lang === 'en' ? 'Thrust:' : 'Propulsión:';
+            document.getElementById('touchThrustKey').textContent = lang === 'en' ? 'THRUST BUTTON' : 'BOTÓN EMPUJE';
+            document.getElementById('touchShootLabel').textContent = lang === 'en' ? 'Fire:' : 'Disparo:';
+            document.getElementById('touchShootKey').textContent = lang === 'en' ? 'FIRE BUTTON' : 'BOTÓN FUEGO';
+            document.getElementById('pauseLabel').textContent = lang === 'en' ? 'Pause:' : 'Pausa:';
+            document.getElementById('startTopLabel').textContent = lang === 'en' ? 'Neon Top 10:' : 'Top 10 Neon:';
+            document.getElementById('startTopValue').textContent = 'LOCAL';
             document.querySelector('#startScreen .game-subtitle').textContent = lang === 'en' ? 'Enter your nick, choose the starting level, and clear the belt. ESC pauses, and on touch use rotate, thrust, fire, and pause.' : 'Ingresá tu nick, elegí el nivel inicial y limpiá el cinturón. ESC pausa y en táctil usá giro, empuje, fuego y pausa.';
             document.getElementById('startButton').textContent = lang === 'en' ? 'START FLIGHT' : 'INICIAR VUELO';
+            document.querySelector('#startScreen .menu-back-btn:last-of-type').textContent = lang === 'en' ? 'BACK TO MENU' : 'VOLVER AL MENÚ';
             document.querySelector('#pauseScreen .game-subtitle').textContent = lang === 'en' ? 'The ship is holding position. Resume with ESC or choose another destination.' : 'La nave quedó en espera. Reanudá con ESC o elegí otro destino.';
+            document.getElementById('pauseNickLabel').textContent = lang === 'en' ? 'Pilot:' : 'Piloto:';
+            document.getElementById('pauseScoreLabel').textContent = lang === 'en' ? 'Current score:' : 'Puntaje actual:';
+            document.getElementById('pauseTopLabel').textContent = lang === 'en' ? 'Top 10:' : 'Top 10:';
+            document.getElementById('pauseTopValue').textContent = 'LOCAL';
             document.getElementById('resumeButton').textContent = lang === 'en' ? 'RESUME' : 'REANUDAR';
             document.getElementById('pauseRestartButton').textContent = lang === 'en' ? 'RESTART' : 'REINICIAR';
+            document.getElementById('pauseHomeButton').textContent = lang === 'en' ? 'HOME MENU' : 'IR AL HOME';
+            document.getElementById('finalScoreLabel').textContent = lang === 'en' ? 'Final score:' : 'Puntaje Final:';
+            document.getElementById('finalHighScoreLabel').textContent = lang === 'en' ? 'Best score:' : 'Mejor Puntaje:';
+            document.getElementById('endTopLabel').textContent = lang === 'en' ? 'Top 10:' : 'Top 10:';
+            document.getElementById('endTopValue').textContent = 'LOCAL';
             document.getElementById('restartButton').textContent = lang === 'en' ? 'PLAY AGAIN' : 'JUGAR DE NUEVO';
             renderTopScores();
         }
