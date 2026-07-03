@@ -157,6 +157,7 @@ const QUAKE_SETTINGS = {
     wallSpawnMaxMs: 5200,
     wallLifeMinMs: 3800,
     wallLifeMaxMs: 7600,
+    wallWarningMs: 1400,
     wallMaxCount: 18,
     bonusLifeMinMs: 3000,
     bonusLifeMaxMs: 5000,
@@ -728,11 +729,15 @@ function spawnQuakeWall() {
         }
 
         if (valid && cells.length > 0) {
+            const bornAt = performance.now();
+            const lifeDuration = randomBetween(QUAKE_SETTINGS.wallLifeMinMs, QUAKE_SETTINGS.wallLifeMaxMs);
             quakeWalls.push({
                 cells,
                 hue: randomInt(270, 330),
-                bornAt: performance.now(),
-                expiresAt: performance.now() + randomBetween(QUAKE_SETTINGS.wallLifeMinMs, QUAKE_SETTINGS.wallLifeMaxMs)
+                bornAt,
+                expiresAt: bornAt + lifeDuration,
+                lifeDuration,
+                phase: Math.random() * Math.PI * 2
             });
             return;
         }
@@ -815,11 +820,16 @@ function updateQuakeState(currentTime) {
         scheduleNextQuakeWall(currentTime);
     }
 
-    const beforeCount = quakeWalls.length;
-    quakeWalls = quakeWalls.filter((wall) => wall.expiresAt > currentTime);
-    if (beforeCount !== quakeWalls.length) {
-        // No-op: walls naturally disappear after their lifetime expires.
-    }
+    const expiredWalls = [];
+    quakeWalls = quakeWalls.filter((wall) => {
+        if (wall.expiresAt > currentTime) {
+            return true;
+        }
+        expiredWalls.push(wall);
+        return false;
+    });
+
+    expiredWalls.forEach(createQuakeWallExpireBurst);
 
     if (!quakeBonusItem && currentTime >= nextQuakeBonusSpawnAt) {
         spawnQuakeBonusItem(currentTime);
@@ -862,6 +872,95 @@ function createEatenParticles(x, y, color) {
             size: 2 + Math.random() * 3
         });
     }
+}
+
+function createQuakeWallExpireBurst(wall) {
+    if (!wall?.cells?.length) return;
+
+    const burstColor = `hsla(${wall.hue}, 100%, 68%, 0.95)`;
+    const flashColor = `hsla(${wall.hue}, 100%, 82%, 0.7)`;
+    const center = wall.cells.reduce((acc, cell) => ({
+        x: acc.x + cell.x,
+        y: acc.y + cell.y
+    }), { x: 0, y: 0 });
+
+    const centerX = (center.x / wall.cells.length) * cellWidth + cellWidth / 2;
+    const centerY = (center.y / wall.cells.length) * cellHeight + cellHeight / 2;
+
+    particles.push({
+        kind: 'ring',
+        x: centerX,
+        y: centerY,
+        radius: Math.min(cellWidth, cellHeight) * 0.35,
+        growth: Math.min(cellWidth, cellHeight) * 0.18,
+        lineWidth: 2.4,
+        color: burstColor,
+        alpha: 0.85,
+        decay: 0.045
+    });
+
+    wall.cells.forEach((cell) => {
+        const cellCenterX = cell.x * cellWidth + cellWidth / 2;
+        const cellCenterY = cell.y * cellHeight + cellHeight / 2;
+
+        particles.push({
+            kind: 'flash',
+            x: cellCenterX,
+            y: cellCenterY,
+            size: Math.min(cellWidth, cellHeight) * 0.5,
+            growth: 0.45,
+            color: flashColor,
+            alpha: 0.55,
+            decay: 0.05
+        });
+
+        const shardCount = 6;
+        for (let i = 0; i < shardCount; i++) {
+            const angle = ((Math.PI * 2) / shardCount) * i + Math.random() * 0.35;
+            const speed = 1.6 + Math.random() * 2.8;
+            particles.push({
+                kind: 'shard',
+                x: cellCenterX,
+                y: cellCenterY,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                color: burstColor,
+                alpha: 1,
+                decay: 0.025 + Math.random() * 0.025,
+                size: 2 + Math.random() * 2.8,
+                rotation: angle,
+                spin: (Math.random() - 0.5) * 0.2
+            });
+        }
+    });
+}
+
+function getQuakeWallVisualState(wall, currentTime) {
+    const lifeDuration = wall.lifeDuration || Math.max(1, wall.expiresAt - wall.bornAt);
+    const remaining = Math.max(0, wall.expiresAt - currentTime);
+    const lifeRatio = Math.max(0, Math.min(1, remaining / lifeDuration));
+    const warningWindow = Math.min(QUAKE_SETTINGS.wallWarningMs, lifeDuration * 0.5);
+    const warningProgress = warningWindow > 0 && remaining <= warningWindow
+        ? 1 - (remaining / warningWindow)
+        : 0;
+    const warningWave = warningProgress > 0
+        ? (Math.sin(currentTime * (0.028 + warningProgress * 0.05) + (wall.phase || 0)) + 1) / 2
+        : 0;
+    const flicker = warningProgress > 0
+        ? 0.45 + warningWave * 0.55
+        : 1;
+    const pulse = 1 + warningProgress * (0.05 + warningWave * 0.18);
+    const shake = warningProgress > 0
+        ? Math.sin(currentTime * 0.095 + (wall.phase || 0)) * warningProgress * Math.max(1, Math.min(cellWidth, cellHeight) * 0.09)
+        : 0;
+
+    return {
+        lifeRatio,
+        warningProgress,
+        flicker,
+        pulse,
+        shake
+    };
 }
 
 // --- ACTUALIZACIONES FÍSICAS ---
@@ -957,8 +1056,11 @@ function updatePhysics() {
 function updateParticles() {
     for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
+        p.x += p.vx || 0;
+        p.y += p.vy || 0;
+        p.rotation = (p.rotation || 0) + (p.spin || 0);
+        p.radius = (p.radius || 0) + (p.growth || 0);
+        p.size = (p.size || 0) + (p.growth || 0);
         p.alpha -= p.decay;
         
         if (p.alpha <= 0) {
@@ -1121,26 +1223,46 @@ function drawFood() {
 function drawQuakeWalls() {
     if (!quakeModeEnabled || quakeWalls.length === 0) return;
 
-        quakeWalls.forEach((wall) => {
-            const wallColor = `hsla(${wall.hue}, 100%, 62%, 0.95)`;
-            const lifeRatio = wall.expiresAt ? Math.max(0.15, Math.min(1, (wall.expiresAt - performance.now()) / (QUAKE_SETTINGS.wallLifeMaxMs || 1))) : 1;
-            wall.cells.forEach((cell) => {
-                const x = cell.x * cellWidth;
-                const y = cell.y * cellHeight;
-                const insetX = cellWidth * 0.08;
-                const insetY = cellHeight * 0.08;
+    const currentTime = performance.now();
+
+    quakeWalls.forEach((wall) => {
+        const { lifeRatio, warningProgress, flicker, pulse, shake } = getQuakeWallVisualState(wall, currentTime);
+        const borderColor = `hsla(${wall.hue}, 100%, ${62 + warningProgress * 20}%, ${0.82 + warningProgress * 0.18})`;
+        const fillColor = `hsla(${wall.hue}, 100%, ${22 + warningProgress * 10}%, ${0.18 + warningProgress * 0.2})`;
+        wall.cells.forEach((cell) => {
+            const x = cell.x * cellWidth;
+            const y = cell.y * cellHeight;
+            const insetX = cellWidth * (0.08 - warningProgress * 0.02);
+            const insetY = cellHeight * (0.08 - warningProgress * 0.02);
+            const width = (cellWidth - insetX * 2) * pulse;
+            const height = (cellHeight - insetY * 2) * pulse;
+            const drawX = x + (cellWidth - width) / 2 + shake;
+            const drawY = y + (cellHeight - height) / 2 - shake * 0.45;
 
             ctx.save();
-            ctx.globalAlpha = lifeRatio;
-            ctx.shadowBlur = 18;
-            ctx.shadowColor = wallColor;
-            ctx.fillStyle = 'rgba(255, 0, 127, 0.18)';
-            ctx.strokeStyle = wallColor;
-            ctx.lineWidth = 2;
+            ctx.globalAlpha = Math.max(0.2, lifeRatio) * flicker;
+            ctx.shadowBlur = 18 + warningProgress * 22;
+            ctx.shadowColor = borderColor;
+            ctx.fillStyle = fillColor;
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 2 + warningProgress * 1.4;
             ctx.beginPath();
-            ctx.roundRect(x + insetX, y + insetY, cellWidth - insetX * 2, cellHeight - insetY * 2, Math.min(cellWidth, cellHeight) * 0.18);
+            ctx.roundRect(drawX, drawY, width, height, Math.min(width, height) * (0.18 + warningProgress * 0.08));
             ctx.fill();
             ctx.stroke();
+
+            if (warningProgress > 0) {
+                ctx.globalAlpha = 0.35 + warningProgress * 0.4;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(drawX + width * 0.18, drawY + height * 0.24);
+                ctx.lineTo(drawX + width * 0.82, drawY + height * 0.76);
+                ctx.moveTo(drawX + width * 0.82, drawY + height * 0.24);
+                ctx.lineTo(drawX + width * 0.18, drawY + height * 0.76);
+                ctx.stroke();
+            }
+
             ctx.restore();
         });
     });
@@ -1186,18 +1308,53 @@ function drawQuakeItems() {
 }
 
 function drawParticles() {
-    ctx.save();
     particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+
+        if (p.kind === 'ring') {
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = p.color;
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = p.lineWidth || 2;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+            return;
+        }
+
+        if (p.kind === 'flash') {
+            const flashGradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2.2);
+            flashGradient.addColorStop(0, p.color);
+            flashGradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = flashGradient;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 2.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            return;
+        }
+
         ctx.shadowBlur = p.size * 2;
         ctx.shadowColor = p.color;
         ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.alpha;
-        
+
+        if (p.kind === 'shard') {
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation || 0);
+            ctx.beginPath();
+            ctx.roundRect(-p.size * 0.45, -p.size * 1.4, p.size * 0.9, p.size * 2.8, p.size * 0.3);
+            ctx.fill();
+            ctx.restore();
+            return;
+        }
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
     });
-    ctx.restore();
 }
 
 // --- CONTROL DEL CICLO PRINCIPAL (Game Loop) ---
