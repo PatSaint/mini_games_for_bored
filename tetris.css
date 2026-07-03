@@ -22,6 +22,7 @@
     --glow-yellow: 0 0 10px rgba(255, 204, 0, 0.6), 0 0 20px rgba(255, 204, 0, 0.3);
     --glow-blue: 0 0 10px rgba(0, 102, 255, 0.6), 0 0 20px rgba(0, 102, 255, 0.3);
     --glow-purple: 0 0 10px rgba(176, 38, 255, 0.6), 0 0 20px rgba(176, 38, 255, 0.3);
+    --mobile-controls-offset: calc(82px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Reset y Estilos Generales */
@@ -647,7 +648,7 @@ body {
         flex-direction: column;
         height: auto;
         padding-top: 80px;
-        padding-bottom: 40px;
+        padding-bottom: calc(220px + env(safe-area-inset-bottom, 0px));
         width: 95%;
         gap: 20px;
     }
@@ -701,7 +702,7 @@ body {
 /* Controles Táctiles (Gamepad Móvil) */
 .dpad-actions-layout {
     position: absolute;
-    bottom: 24px;
+    bottom: var(--mobile-controls-offset);
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
@@ -712,6 +713,7 @@ body {
     align-items: center;
     padding: 0 20px;
     z-index: 40;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @media (max-width: 768px) {

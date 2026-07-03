@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neon Tetris | Juego Retro-Moderno</title>
+    <meta name="theme-color" content="#020204">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -68,7 +72,7 @@
         <!-- Pantalla de Inicio -->
         <div id="startScreen" class="menu-content">
             <h1 class="game-title neon-text-pink">NEON<br><span class="neon-text-cyan">TETRIS</span></h1>
-            <p class="game-subtitle">Ingresá tu nick, elegí el nivel inicial y apilá bloques con caída calibrada desde el arranque. ESC pausa y en móvil usá el pad táctil.</p>
+            <p class="game-subtitle" data-touch-text="Ingresá tu nick, elegí el nivel inicial y apilá bloques con caída calibrada desde el arranque. Tocá INICIAR y usá el pad táctil para mover, rotar y soltar." data-desktop-text="Ingresá tu nick, elegí el nivel inicial y apilá bloques con caída calibrada desde el arranque. ESC pausa y en móvil usá el pad táctil.">Ingresá tu nick, elegí el nivel inicial y apilá bloques con caída calibrada desde el arranque. ESC pausa y en móvil usá el pad táctil.</p>
             <div class="form-group">
                 <label for="nicknameInput">NICKNAME (MAX 10)</label>
                 <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" autocomplete="off">
@@ -111,7 +115,8 @@
                 <a href="simon.html" class="quick-link">SIMON</a>
                 <a href="snake.html" class="quick-link">SNAKE</a>
             </div>
-            <button id="startButton" class="action-btn btn-pink">PRESIONÁ ESPACIO O TOCÁ PARA INICIAR</button>
+            <div data-install-slot></div>
+            <button id="startButton" class="action-btn btn-pink" data-touch-text="TOCÁ PARA INICIAR" data-desktop-text="PRESIONÁ ESPACIO O TOCÁ PARA INICIAR">PRESIONÁ ESPACIO O TOCÁ PARA INICIAR</button>
             <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
         </div>
 
@@ -137,14 +142,14 @@
                 <a href="simon.html" class="quick-link">SIMON</a>
                 <a href="snake.html" class="quick-link">SNAKE</a>
             </div>
-            <p class="restart-prompt">Presioná <span class="highlight-key">ESPACIO</span> para volver a intentar</p>
+            <p class="restart-prompt" data-touch-html="Tocá <span class='highlight-key'>JUGAR DE NUEVO</span> para volver a intentar" data-desktop-html="Presioná <span class='highlight-key'>ESPACIO</span> para volver a intentar">Presioná <span class="highlight-key">ESPACIO</span> para volver a intentar</p>
             <button id="restartButton" class="action-btn btn-red">JUGAR DE NUEVO</button>
         </div>
 
         <!-- Pantalla de Pausa -->
         <div id="pauseScreen" class="menu-content hidden">
             <h2 class="game-title neon-text-yellow">PAUSA</h2>
-            <p class="pause-instruction">Presioná <span class="highlight-key">ESC</span> para continuar o elegí tu próximo paso.</p>
+            <p class="pause-instruction" data-touch-html="Tocá <span class='highlight-key'>REANUDAR</span> o elegí tu próximo paso." data-desktop-html="Presioná <span class='highlight-key'>ESC</span> para continuar o elegí tu próximo paso.">Presioná <span class="highlight-key">ESC</span> para continuar o elegí tu próximo paso.</p>
             <div class="leaderboard-panel compact-panel">
                 <div class="leaderboard-title">TOP 10</div>
                 <div id="leaderboardPause" class="leaderboard-list"></div>
@@ -194,6 +199,7 @@
     </div>
 
     <!-- Script del Juego -->
+    <script src="app-shell.js"></script>
     <script src="tetris.js"></script>
 </body>
 </html>
