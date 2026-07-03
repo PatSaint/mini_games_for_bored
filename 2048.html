@@ -118,6 +118,7 @@
         const canvas = document.getElementById('lifeCanvas');
         const ctx = canvas.getContext('2d');
         const uiHelper = window.BORED_UI;
+        const audio = window.BORED_AUDIO;
         const device = window.BORED_DEVICE || { isTouchDevice:false };
         const overlay = document.getElementById('overlay');
         const homeScreen = document.getElementById('homeScreen');
@@ -232,6 +233,7 @@
             }
             board = next;
             generations++;
+            audio?.play('lifeTick');
             sessionScore += getLiveCells() + currentLevel.id * 5;
             if (generations >= currentLevel.target && getLiveCells() > 0) return completeLevel();
             if (getLiveCells() === 0) return finishRun(false);
@@ -239,6 +241,7 @@
         }
         function completeLevel() {
             state = STATES.RESULT;
+            audio?.play('lifeCompletion');
             const hasNext = currentLevel.id < LEVELS.length;
             nextLevelAfterResult = hasNext ? currentLevel.id + 1 : null;
             sessionScore += currentLevel.target * 25;
@@ -256,6 +259,7 @@
         }
         function finishRun(victoryEnd) {
             state = STATES.RESULT;
+            audio?.play(victoryEnd ? 'lifeCompletion' : 'lifeExtinction');
             saveRunAndRefresh(currentLevel.id);
             resultTitle.textContent = victoryEnd ? 'RUN PERFECTA' : 'COLONIA CAÍDA';
             resultSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntos</span><strong>${sessionScore}</strong></div><div class="stats-row"><span>Último nivel</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div><div class="stats-row"><span>Generaciones</span><strong>${generations}/${currentLevel.target}</strong></div>`;
@@ -282,6 +286,7 @@
             if (!board[y] || board[y][x] === undefined) return;
             if (!board[y][x] && editsUsed >= currentLevel.edits) return;
             board[y][x] = !board[y][x];
+            audio?.play('lifeToggle');
             if (board[y][x]) editsUsed++;
             updateHud();
             draw();

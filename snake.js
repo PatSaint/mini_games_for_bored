@@ -77,6 +77,7 @@ let topScores = loadTopScores();
 let highScore = topScores[0]?.score || 0;
 let currentNickname = 'PLAYER';
 const uiHelper = window.BORED_UI;
+const audio = window.BORED_AUDIO;
 
 // Variables de Control del Bucle de Juego
 let lastTickTime = 0;
@@ -305,6 +306,7 @@ function startGame() {
     
     // Resetear tiempos
     lastTickTime = performance.now();
+    audio?.play('snakeStart');
 }
 
 function pauseGame() {
@@ -339,6 +341,7 @@ function resumeGameAfterResize() {
 
 function gameOver() {
     currentState = STATES.GAMEOVER;
+    audio?.play('snakeDeath');
     saveTopScore();
     
     // Actualizar textos finales
@@ -457,6 +460,7 @@ function updatePhysics() {
     for (let i = 0; i < foodItems.length; i++) {
         if (foodItems[i].x === newHead.x && foodItems[i].y === newHead.y) {
             ateFood = true;
+            audio?.play('snakeEat');
             
             // Incrementar puntuación
             score += 10 * level;

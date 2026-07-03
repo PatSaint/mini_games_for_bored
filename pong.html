@@ -194,6 +194,7 @@
         const finalBestScore = document.getElementById('finalBestScore');
         const isTouchDevice = window.BORED_DEVICE?.isTouchDevice ?? (window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window);
         const uiHelper = window.BORED_UI;
+        const audio = window.BORED_AUDIO;
 
         const STATES = { START: 'START', PLAYING: 'PLAYING', PAUSED: 'PAUSED', GAMEOVER: 'GAMEOVER' };
         let currentState = STATES.START;
@@ -350,6 +351,7 @@
             overlay.classList.add('hidden');
             resizeGame();
             resetPositions(playerSide === 'left' ? 1 : -1);
+            audio?.play('pongScore');
         }
 
         function pauseGame() {
@@ -362,6 +364,7 @@
 
         function finishGame(playerWon) {
             currentState = STATES.GAMEOVER;
+            audio?.play(playerWon ? 'pongWin' : 'pongLose');
             const score = getPlayerPaddle().score * 100 + level * 10 + (playerWon ? 50 : 0);
             const list = saveTopScore('pong', playerNick, score);
             updateBestScore();
@@ -441,6 +444,7 @@
                         ball.vx = speed * Math.sin(angle);
                         ball.y = index === 0 ? paddle.y + paddle.h + ball.radius : paddle.y - ball.radius;
                         spawnImpactParticles(ball.x, ball.y, index === 0 ? varColor('--neon-cyan') : varColor('--neon-pink'));
+                        audio?.play('pongPaddleHit');
                     }
                 } else {
                     const movingLeft = ball.vx < 0;
@@ -454,6 +458,7 @@
                         ball.vy = speed * Math.sin(angle);
                         ball.x = index === 0 ? paddle.x + paddle.w + ball.radius : paddle.x - ball.radius;
                         spawnImpactParticles(ball.x, ball.y, index === 0 ? varColor('--neon-cyan') : varColor('--neon-pink'));
+                        audio?.play('pongPaddleHit');
                     }
                 }
             });
@@ -461,22 +466,26 @@
             if (isTouchDevice) {
                 if (ball.y < playfield.y) {
                     rightPaddle.score += 1;
+                    audio?.play('pongScore');
                     updateScoreDisplays();
                     if (rightPaddle.score >= 7) finishGame(playerSide === 'right'); else resetPositions(1);
                 }
                 if (ball.y > playfield.y + playfield.h) {
                     leftPaddle.score += 1;
+                    audio?.play('pongScore');
                     updateScoreDisplays();
                     if (leftPaddle.score >= 7) finishGame(playerSide === 'left'); else resetPositions(-1);
                 }
             } else {
                 if (ball.x < playfield.x) {
                     rightPaddle.score += 1;
+                    audio?.play('pongScore');
                     updateScoreDisplays();
                     if (rightPaddle.score >= 7) finishGame(playerSide === 'right'); else resetPositions(1);
                 }
                 if (ball.x > playfield.x + playfield.w) {
                     leftPaddle.score += 1;
+                    audio?.play('pongScore');
                     updateScoreDisplays();
                     if (leftPaddle.score >= 7) finishGame(playerSide === 'left'); else resetPositions(-1);
                 }

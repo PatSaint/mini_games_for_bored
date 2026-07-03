@@ -134,6 +134,7 @@ let currentLevel = 1; // Nivel actual sumando progreso de líneas
 let dropInterval = 1000; // ms
 let currentNickname = 'PLAYER';
 const uiHelper = window.BORED_UI;
+const audio = window.BORED_AUDIO;
 
 // Tiempos y Ciclo
 let lastDropTime = 0;
@@ -381,11 +382,15 @@ function startGame() {
     
     drawNextPiece();
     lastDropTime = performance.now();
+    audio?.stopLoop('tetrisLoop');
+    audio?.play('gameStart');
+    audio?.startLoop('tetrisLoop');
 }
 
 function pauseGame() {
     renderTopScores();
     currentState = STATES.PAUSED;
+    audio?.stopLoop('tetrisLoop');
     showScreen(pauseScreen);
 }
 
@@ -393,16 +398,20 @@ function resumeGame() {
     currentState = STATES.PLAYING;
     hideOverlay();
     lastDropTime = performance.now();
+    audio?.startLoop('tetrisLoop');
 }
 
 function resumeGameAfterResize() {
     currentState = STATES.PLAYING;
     hideOverlay();
     lastDropTime = performance.now();
+    audio?.startLoop('tetrisLoop');
 }
 
 function gameOver() {
     currentState = STATES.GAMEOVER;
+    audio?.stopLoop('tetrisLoop');
+    audio?.play('tetrisGameOver');
     saveTopScore();
     
     finalScore.textContent = score;
@@ -477,6 +486,7 @@ function rotatePiece() {
         if (!checkCollision(dx, 0, rotated)) {
             currentPiece.matrix = rotated;
             currentPiece.x += dx;
+            audio?.play('tetrisRotate');
             return;
         }
     }
@@ -490,6 +500,7 @@ function hardDrop() {
     }
     score += droppedLines * 2;
     scoreDisplay.textContent = score;
+    if (droppedLines > 0) audio?.play('tetrisDrop');
     
     lockPiece();
 }
@@ -545,12 +556,14 @@ function checkLines() {
     
     if (flashingRows.length > 0) {
         flashDuration = 15; // 15 frames de destello (unos 250ms)
+        audio?.play('tetrisLineClear');
         // Crear chispas de neón en las filas eliminadas
         flashingRows.forEach(r => createLineParticles(r));
     }
 }
 
 function clearFlashingRows() {
+    const previousLevel = currentLevel;
     // Eliminar las filas de la matriz
     flashingRows.sort((a, b) => a - b).forEach(r => {
         board.splice(r, 1);
@@ -569,6 +582,9 @@ function clearFlashingRows() {
     
     // Actualizar velocidad según total de líneas
     updateGameSpeed();
+    if (currentLevel > previousLevel) {
+        audio?.play('tetrisLevelUp');
+    }
     
     flashingRows = [];
     

@@ -513,6 +513,7 @@
         let highScore = topScores[0]?.score || 0;
         let currentNickname = 'PLAYER';
         const uiHelper = window.BORED_UI;
+        const audio = window.BORED_AUDIO;
         let scheduledTimeouts = [];
 
         let diskSize = 360;
@@ -722,6 +723,7 @@
             overlay.classList.add('hidden');
             statusText.textContent = "Presta Atención";
             statusText.style.color = 'rgba(255, 255, 255, 0.4)';
+            audio?.play('gameStart');
 
             resizeGame();
             pulseWaves = [];
@@ -763,6 +765,7 @@
         function flashButton(id) {
             const btn = BUTTONS[id];
             btn.flashTime = 20; // 20 frames de destello brillante
+            audio?.play(['simonGreen', 'simonRed', 'simonYellow', 'simonBlue'][id]);
 
             // Lanzar onda expansiva
             pulseWaves.push({
@@ -793,6 +796,7 @@
                     currentState = STATES.CPU;
                     statusText.textContent = "¡Bien!";
                     statusText.style.color = '#39ff14';
+                    audio?.play('simonSuccess');
                     schedule(nextRound, 1000);
                 }
             } else {
@@ -822,6 +826,7 @@
             currentState = STATES.GAMEOVER;
             statusText.textContent = "Secuencia Incorrecta";
             statusText.style.color = '#ff073a';
+            audio?.play('simonFail');
 
             // Parpadear todo en rojo
             BUTTONS.forEach(b => b.flashTime = 30);

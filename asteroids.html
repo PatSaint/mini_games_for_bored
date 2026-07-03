@@ -673,6 +673,7 @@
         let lives = 3;
         let currentNickname = 'PLAYER';
         const uiHelper = window.BORED_UI;
+        const audio = window.BORED_AUDIO;
 
         let ship = { x: 0, y: 0, r: 12, angle: -Math.PI / 2, vx: 0, vy: 0, friction: 0.985, thrustPower: 0.16, rotateSpeed: 0.07, lastShot: 0, cooldown: 250 };
         let lasers = []; // {x, y, vx, vy, life}
@@ -815,6 +816,7 @@
         }
 
         function splitAsteroid(ast) {
+            audio?.play('asteroidsSplit');
             spawnSparks(ast.x, ast.y, '#ff007f', 15);
             score += ast.points;
             scoreDisplay.textContent = score;
@@ -912,6 +914,9 @@
 
             currentState = STATES.PLAYING;
             overlay.classList.add('hidden');
+            audio?.stopLoop('asteroidsLoop');
+            audio?.play('gameStart');
+            audio?.startLoop('asteroidsLoop');
             
             resizeGame();
             initAsteroids();
@@ -920,6 +925,7 @@
         function pauseGame() {
             Object.keys(keys).forEach((code) => { keys[code] = false; });
             currentState = STATES.PAUSED;
+            audio?.stopLoop('asteroidsLoop');
             pauseNick.textContent = currentNickname;
             pauseScore.textContent = score;
             renderTopScores();
@@ -928,12 +934,14 @@
 
         function resumeGame() {
             currentState = STATES.PLAYING;
+            audio?.startLoop('asteroidsLoop');
             overlay.classList.add('hidden');
         }
 
         function shoot() {
             const now = performance.now();
             if (now - ship.lastShot >= ship.cooldown) {
+                audio?.play('asteroidsShoot');
                 const laserSpeed = 8;
                 lasers.push({
                     x: ship.x + Math.cos(ship.angle) * ship.r,
@@ -951,6 +959,8 @@
 
         function triggerEnd(won) {
             currentState = won ? STATES.WON : STATES.GAMEOVER;
+            audio?.stopLoop('asteroidsLoop');
+            audio?.play(won ? 'asteroidsWin' : 'asteroidsGameOver');
             saveTopScore();
             showMenu(endScreen);
 
@@ -1031,6 +1041,7 @@
 
             // Nave: Propulsión (Thrust)
             if (keys['ArrowUp'] || keys['KeyW']) {
+                audio?.play('asteroidsThrust');
                 ship.vx += Math.cos(ship.angle) * ship.thrustPower;
                 ship.vy += Math.sin(ship.angle) * ship.thrustPower;
 
@@ -1109,6 +1120,7 @@
 
                 if (dist < ship.r + ast.radius) {
                     // Muerte nave
+                    audio?.play('asteroidsExplode');
                     spawnSparks(ship.x, ship.y, '#00f0ff', 25);
                     lives--;
                     livesDisplay.textContent = lives;

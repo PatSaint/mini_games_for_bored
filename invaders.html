@@ -282,6 +282,7 @@
         let currentState = STATES.START;
         let playerNick = 'PLAYER1';
         const uiHelper = window.BORED_UI;
+        const audio = window.BORED_AUDIO;
         let score = 0;
         let lives = 3;
         let level = 1;
@@ -443,11 +444,15 @@
             bannerUntil = countdownUntil;
             applyLevelSettings();
             hideOverlay();
+            audio?.stopLoop('invadersLoop');
+            audio?.play('gameStart');
+            audio?.startLoop('invadersLoop');
         }
 
         function pauseGame() {
             if (currentState !== STATES.PLAYING && currentState !== STATES.COUNTDOWN && currentState !== STATES.BETWEEN_WAVES) return;
             currentState = STATES.PAUSED;
+            audio?.stopLoop('invadersLoop');
             bannerMessage = 'PAUSA';
             pauseWave.textContent = level;
             pauseScore.textContent = score;
@@ -459,6 +464,7 @@
         function resumeGame() {
             if (currentState !== STATES.PAUSED) return;
             currentState = STATES.COUNTDOWN;
+            audio?.startLoop('invadersLoop');
             countdownUntil = performance.now() + 1500;
             bannerMessage = 'VOLVIENDO';
             bannerUntil = countdownUntil;
@@ -468,6 +474,7 @@
         function completeWave() {
             if (waveTransitionLock) return;
             waveTransitionLock = true;
+            audio?.play('invadersWaveClear');
             currentState = STATES.BETWEEN_WAVES;
             bannerMessage = `OLEADA ${level} LIMPIA`;
             bannerUntil = performance.now() + 1500;
@@ -482,6 +489,8 @@
 
         function finishGame(won = false) {
             currentState = STATES.GAMEOVER;
+            audio?.stopLoop('invadersLoop');
+            audio?.play(won ? 'invadersWaveClear' : 'invadersGameOver');
             const saved = saveTopScore('invaders', playerNick, score);
             updateHighScore();
             gameOverTitle.textContent = won ? '¡VICTORIA TOTAL!' : 'FIN DEL JUEGO';
@@ -497,6 +506,7 @@
 
         function shootLaser(originX, originY, vy, color) {
             lasers.push({ x: originX, y: originY, vy, color });
+            if (vy < 0) audio?.play('invadersShoot');
         }
 
         function spawnParticles(x, y, color, count = 10) {
@@ -553,6 +563,7 @@
                         if (l.x >= al.x && l.x <= al.x + al.w && l.y >= al.y && l.y <= al.y + al.h) {
                             score += al.points;
                             scoreDisplay.textContent = score;
+                            audio?.play('invadersAlienHit');
                             spawnParticles(al.x + al.w / 2, al.y + al.h / 2, al.color, 12);
                             aliens.splice(j, 1);
                             lasers.splice(i, 1);
@@ -562,6 +573,7 @@
                         }
                     }
                 } else if (l.x >= player.x && l.x <= player.x + player.w && l.y >= player.y && l.y <= player.y + player.h) {
+                    audio?.play('invadersExplosion');
                     spawnParticles(player.x + player.w / 2, player.y + player.h / 2, '#ff007f', 14);
                     lives -= 1;
                     livesDisplay.textContent = lives;
@@ -683,6 +695,7 @@
         document.getElementById('playAgainButton').addEventListener('click', () => startGame(true));
         document.getElementById('backToMenuButton').addEventListener('click', () => {
             currentState = STATES.START;
+            audio?.stopLoop('invadersLoop');
             bannerMessage = 'LISTO';
             statusDisplay.textContent = 'LISTO';
             renderTop10(topScores);

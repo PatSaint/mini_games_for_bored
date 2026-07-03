@@ -205,6 +205,7 @@
         let currentInputMode = INPUT_MODES.REVEAL;
         let playerNick = 'PLAYER1';
         const uiHelper = window.BORED_UI;
+        const audio = window.BORED_AUDIO;
         let selectedLevel = 1;
         let cols = 10, rows = 10, mineCount = 15, cellSize = 34;
         let grid = [];
@@ -318,6 +319,7 @@
             const cell = grid[r][c];
             if (!cell || cell.revealed) return;
             cell.flagged = !cell.flagged;
+            audio?.play('minesFlag');
             flagCount += cell.flagged ? 1 : -1;
             flagsDisplay.textContent = `${flagCount}`;
             pauseFlags.textContent = `${flagCount}`;
@@ -329,6 +331,7 @@
             if (!cell || cell.revealed || cell.flagged) return;
             if (firstClick) { firstClick = false; plantMines(r, c); }
             cell.revealed = true;
+            audio?.play('minesReveal');
             if (!cell.mine) revealedSafeCells++;
             spawnSparks(c * cellSize + cellSize / 2, r * cellSize + cellSize / 2, '#ffffff', 5);
             if (cell.mine) { cell.exploded = true; triggerGameOver(false, r, c); return; }
@@ -349,6 +352,7 @@
 
         function triggerGameOver(won, boomRow = 0, boomCol = 0) {
             currentState = won ? STATES.WON : STATES.GAMEOVER;
+            audio?.play(won ? 'minesWin' : 'minesExplosion');
             stateDisplay.textContent = won ? 'GANASTE' : 'PERDISTE';
             for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (grid[r][c].mine) grid[r][c].revealed = true;
             if (!won) spawnSparks(boomCol * cellSize + cellSize / 2, boomRow * cellSize + cellSize / 2, '#ff073a', 32);
