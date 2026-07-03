@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neon Pong | Juego Retro-Moderno</title>
+    <meta name="theme-color" content="#020204">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -64,6 +68,7 @@
         .score-points { font-family: 'Orbitron', monospace; color: var(--neon-cyan); }
         .touch-help { font-size: 12px; color: rgba(255,255,255,.56); text-align: center; }
         @media (max-width: 640px) { .form-grid, .button-row, .quick-links, .radio-grid { grid-template-columns: 1fr; } .menu-content { padding: 22px; max-height: calc(100vh - 32px); } #hud { top: 72px; width: calc(100% - 24px); } }
+        body.touch-portrait #hud { top: 84px; }
         @media (max-width: 480px) { .back-btn { top: 12px; left: 12px; padding: 6px 12px; font-size: 9px; } .branding { top: 12px; right: 12px; font-size: 10px; } }
     </style>
 </head>
@@ -95,10 +100,10 @@
                 </div>
             </div>
             <div class="radio-grid">
-                <label class="radio-card"><input type="radio" name="side" value="left" checked><span><strong>LADO LEFT</strong><small>Controlás la pala izquierda en cancha retrato.</small></span></label>
-                <label class="radio-card"><input type="radio" name="side" value="right"><span><strong>LADO RIGHT</strong><small>Controlás la pala derecha. La CPU toma la otra.</small></span></label>
-                <label class="radio-card"><input type="radio" name="inputMode" value="keyboard"><span><strong>KEYBOARD</strong><small>▲/▼ o W/S. Sólo teclado.</small></span></label>
-                <label class="radio-card"><input type="radio" name="inputMode" value="touch"><span><strong>MOUSE / TOUCH</strong><small>Arrastrá o tocá la cancha. Sólo puntero.</small></span></label>
+                <label class="radio-card" data-side-card="left"><input type="radio" name="side" value="left" checked><span><strong>LADO LEFT</strong><small>Controlás la pala izquierda en cancha retrato.</small></span></label>
+                <label class="radio-card" data-side-card="right"><input type="radio" name="side" value="right"><span><strong>LADO RIGHT</strong><small>Controlás la pala derecha. La CPU toma la otra.</small></span></label>
+                <label class="radio-card" data-input-card="keyboard"><input type="radio" name="inputMode" value="keyboard"><span><strong>KEYBOARD</strong><small>▲/▼ o W/S. Sólo teclado.</small></span></label>
+                <label class="radio-card" data-input-card="touch"><input type="radio" name="inputMode" value="touch"><span><strong>MOUSE / TOUCH</strong><small>Arrastrá o tocá la cancha. Sólo puntero.</small></span></label>
             </div>
             <div class="controls-guide">
                 <div class="control-row"><span>Velocidad base</span><span id="speedPreview" class="control-key">--</span></div>
@@ -106,11 +111,12 @@
                 <div class="control-row"><span>Pausa</span><span class="control-key">ESC</span></div>
                 <div class="control-row"><span>Meta</span><span class="control-key">7 PUNTOS</span></div>
             </div>
-            <p class="touch-help">En equipos táctiles se preselecciona MOUSE / TOUCH automáticamente. Como corresponde.</p>
+            <p class="touch-help" data-touch-text="Se preselecciona MOUSE / TOUCH automáticamente. Arrastrá o tocá la cancha y listo." data-desktop-text="En equipos táctiles se preselecciona MOUSE / TOUCH automáticamente. Como corresponde.">En equipos táctiles se preselecciona MOUSE / TOUCH automáticamente. Como corresponde.</p>
             <div class="button-row">
                 <button id="startButton" class="action-btn">START</button>
                 <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
             </div>
+            <div data-install-slot></div>
             <div class="quick-links">
                 <a class="quick-link" href="invaders.html">IR A INVADERS</a>
                 <a class="quick-link" href="minesweeper.html">IR A MINESWEEPER</a>
@@ -158,6 +164,7 @@
         </div>
     </div>
 
+    <script src="app-shell.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -185,7 +192,8 @@
         const finalPlayerScore = document.getElementById('finalPlayerScore');
         const finalCpuScore = document.getElementById('finalCpuScore');
         const finalBestScore = document.getElementById('finalBestScore');
-        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+        const isTouchDevice = window.BORED_DEVICE?.isTouchDevice ?? (window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window);
+        const uiHelper = window.BORED_UI;
 
         const STATES = { START: 'START', PLAYING: 'PLAYING', PAUSED: 'PAUSED', GAMEOVER: 'GAMEOVER' };
         let currentState = STATES.START;
@@ -196,6 +204,7 @@
         let bestScore = 0;
         let keys = {};
         let pointerY = 0;
+        let pointerX = 0;
 
         let playfield = { x: 0, y: 0, w: 0, h: 0 };
         let ball = { x: 0, y: 0, vx: 0, vy: 0, radius: 8 };
@@ -205,11 +214,21 @@
         let trail = [];
 
         document.querySelector(`input[name="inputMode"][value="${inputMode}"]`).checked = true;
+        if (isTouchDevice) {
+            const keyboardCard = document.querySelector('[data-input-card="keyboard"]');
+            if (keyboardCard) keyboardCard.hidden = true;
+            const touchCardLabel = document.querySelector('[data-input-card="touch"] span');
+            if (touchCardLabel) touchCardLabel.innerHTML = '<strong>TOUCH ONLY</strong><small>Cancha vertical: arrastrá o tocá en horizontal.</small>';
+            const topCard = document.querySelector('[data-side-card="left"] span');
+            const bottomCard = document.querySelector('[data-side-card="right"] span');
+            if (topCard) topCard.innerHTML = '<strong>LADO TOP</strong><small>Controlás la pala superior.</small>';
+            if (bottomCard) bottomCard.innerHTML = '<strong>LADO BOTTOM</strong><small>Controlás la pala inferior.</small>';
+        }
 
-        function sanitizeNick(value) { return (value || 'PLAYER1').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 10) || 'PLAYER1'; }
+        function sanitizeNick(value) { return uiHelper?.normalizeNickname(value) || ''; }
         function getTopScores() { try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch { return []; } }
         function saveTopScore(gameKey, nick, score) {
-            const safeNick = sanitizeNick(nick);
+            const safeNick = sanitizeNick(nick) || 'PLAYER1';
             const list = getTopScores();
             list.push({ nick: safeNick, score: Number(score) || 0, level, side: playerSide, at: Date.now(), gameKey });
             list.sort((a, b) => b.score - a.score || b.level - a.level || a.at - b.at);
@@ -240,46 +259,88 @@
         function resizeGame() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            const maxW = Math.min(520, canvas.width - 40);
-            const maxH = Math.min(canvas.height - 120, Math.max(420, canvas.height - 140));
-            const ratio = 0.62;
-            playfield.h = maxH;
-            playfield.w = Math.min(maxW, playfield.h * ratio);
-            playfield.x = (canvas.width - playfield.w) / 2;
-            playfield.y = (canvas.height - playfield.h) / 2 + 12;
+            if (isTouchDevice) {
+                document.body.classList.add('touch-portrait');
+                playfield.w = Math.min(canvas.width - 40, 620);
+                playfield.h = Math.min(canvas.height - 180, Math.max(340, canvas.height * 0.56));
+                playfield.x = (canvas.width - playfield.w) / 2;
+                playfield.y = Math.max(112, (canvas.height - playfield.h) / 2 - 8);
+            } else {
+                document.body.classList.remove('touch-portrait');
+                const maxW = Math.min(520, canvas.width - 40);
+                const maxH = Math.min(canvas.height - 120, Math.max(420, canvas.height - 140));
+                const ratio = 0.62;
+                playfield.h = maxH;
+                playfield.w = Math.min(maxW, playfield.h * ratio);
+                playfield.x = (canvas.width - playfield.w) / 2;
+                playfield.y = (canvas.height - playfield.h) / 2 + 12;
+            }
             const paddleHeight = Math.max(80, Math.min(140, playfield.h * 0.18));
             leftPaddle.h = paddleHeight; rightPaddle.h = paddleHeight;
-            leftPaddle.x = playfield.x + 16; rightPaddle.x = playfield.x + playfield.w - rightPaddle.w - 16;
+            if (isTouchDevice) {
+                leftPaddle.w = Math.max(84, Math.min(140, playfield.w * 0.22));
+                rightPaddle.w = leftPaddle.w;
+                leftPaddle.h = 16;
+                rightPaddle.h = 16;
+                leftPaddle.x = playfield.x + playfield.w / 2 - leftPaddle.w / 2;
+                rightPaddle.x = leftPaddle.x;
+                leftPaddle.y = playfield.y + 18;
+                rightPaddle.y = playfield.y + playfield.h - rightPaddle.h - 18;
+            } else {
+                leftPaddle.w = 16;
+                rightPaddle.w = 16;
+                leftPaddle.x = playfield.x + 16; rightPaddle.x = playfield.x + playfield.w - rightPaddle.w - 16;
+            }
             clampPaddles();
             if (currentState === STATES.START) resetPositions();
         }
 
         function clampPaddles() {
-            leftPaddle.y = Math.max(playfield.y, Math.min(playfield.y + playfield.h - leftPaddle.h, leftPaddle.y || playfield.y + playfield.h / 2 - leftPaddle.h / 2));
-            rightPaddle.y = Math.max(playfield.y, Math.min(playfield.y + playfield.h - rightPaddle.h, rightPaddle.y || playfield.y + playfield.h / 2 - rightPaddle.h / 2));
+            if (isTouchDevice) {
+                leftPaddle.x = Math.max(playfield.x, Math.min(playfield.x + playfield.w - leftPaddle.w, leftPaddle.x || playfield.x + playfield.w / 2 - leftPaddle.w / 2));
+                rightPaddle.x = Math.max(playfield.x, Math.min(playfield.x + playfield.w - rightPaddle.w, rightPaddle.x || playfield.x + playfield.w / 2 - rightPaddle.w / 2));
+            } else {
+                leftPaddle.y = Math.max(playfield.y, Math.min(playfield.y + playfield.h - leftPaddle.h, leftPaddle.y || playfield.y + playfield.h / 2 - leftPaddle.h / 2));
+                rightPaddle.y = Math.max(playfield.y, Math.min(playfield.y + playfield.h - rightPaddle.h, rightPaddle.y || playfield.y + playfield.h / 2 - rightPaddle.h / 2));
+            }
         }
         function resetPositions(dir = 1) {
-            leftPaddle.y = playfield.y + playfield.h / 2 - leftPaddle.h / 2;
-            rightPaddle.y = playfield.y + playfield.h / 2 - rightPaddle.h / 2;
+            if (isTouchDevice) {
+                leftPaddle.x = playfield.x + playfield.w / 2 - leftPaddle.w / 2;
+                rightPaddle.x = leftPaddle.x;
+                leftPaddle.y = playfield.y + 18;
+                rightPaddle.y = playfield.y + playfield.h - rightPaddle.h - 18;
+                pointerX = playfield.x + playfield.w / 2;
+            } else {
+                leftPaddle.y = playfield.y + playfield.h / 2 - leftPaddle.h / 2;
+                rightPaddle.y = playfield.y + playfield.h / 2 - rightPaddle.h / 2;
+            }
             pointerY = playfield.y + playfield.h / 2;
             const speed = 4.8 + level * 0.55;
             ball.x = playfield.x + playfield.w / 2;
             ball.y = playfield.y + playfield.h / 2;
             const angle = (Math.random() * 60 - 30) * Math.PI / 180;
-            ball.vx = dir * speed * Math.cos(angle);
-            ball.vy = speed * Math.sin(angle);
+            if (isTouchDevice) {
+                ball.vx = speed * Math.sin(angle);
+                ball.vy = dir * speed * Math.cos(angle);
+            } else {
+                ball.vx = dir * speed * Math.cos(angle);
+                ball.vy = speed * Math.sin(angle);
+            }
         }
         function getPlayerPaddle() { return playerSide === 'left' ? leftPaddle : rightPaddle; }
         function getCpuPaddle() { return playerSide === 'left' ? rightPaddle : leftPaddle; }
-        function updateHudMeta() { inputDisplay.textContent = inputMode.toUpperCase(); sideDisplay.textContent = playerSide.toUpperCase(); }
+        function updateHudMeta() { inputDisplay.textContent = (isTouchDevice ? 'TOUCH' : inputMode.toUpperCase()); sideDisplay.textContent = isTouchDevice ? (playerSide === 'left' ? 'TOP' : 'BOTTOM') : playerSide.toUpperCase(); }
         function showPanel(panel) { overlay.classList.remove('hidden'); [startScreen, pauseScreen, gameOverScreen].forEach(node => node.classList.add('hidden')); panel.classList.remove('hidden'); }
 
         function startGame() {
-            playerNick = sanitizeNick(nickInput.value);
+            const validatedNickname = uiHelper?.requireNickname(nickInput, { message: 'Ingresá tu nombre antes de sacar el primer punto.' }) ?? sanitizeNick(nickInput.value);
+            if (!validatedNickname) return;
+            playerNick = validatedNickname;
             nickInput.value = playerNick;
             level = Number(levelSelect.value || 1);
             playerSide = getSelectedValue('side') || 'left';
-            inputMode = getSelectedValue('inputMode') || (isTouchDevice ? 'touch' : 'keyboard');
+            inputMode = isTouchDevice ? 'touch' : (getSelectedValue('inputMode') || 'keyboard');
             leftPaddle.score = 0; rightPaddle.score = 0;
             playerScoreDisplay.textContent = 0; cpuScoreDisplay.textContent = 0;
             updateHudMeta();
@@ -328,49 +389,97 @@
             const cpuPaddle = getCpuPaddle();
             const controlSpeed = 8;
 
-            if (inputMode === 'keyboard') {
+            if (!isTouchDevice && inputMode === 'keyboard') {
                 if (keys['ArrowUp'] || keys['KeyW']) playerPaddle.y -= controlSpeed;
                 if (keys['ArrowDown'] || keys['KeyS']) playerPaddle.y += controlSpeed;
             } else {
-                const targetY = pointerY - playerPaddle.h / 2;
-                playerPaddle.y += (targetY - playerPaddle.y) * 0.28;
+                if (isTouchDevice) {
+                    const targetX = pointerX - playerPaddle.w / 2;
+                    playerPaddle.x += (targetX - playerPaddle.x) * 0.28;
+                } else {
+                    const targetY = pointerY - playerPaddle.h / 2;
+                    playerPaddle.y += (targetY - playerPaddle.y) * 0.28;
+                }
             }
-            playerPaddle.y = Math.max(playfield.y, Math.min(playfield.y + playfield.h - playerPaddle.h, playerPaddle.y));
+            if (isTouchDevice) {
+                playerPaddle.x = Math.max(playfield.x, Math.min(playfield.x + playfield.w - playerPaddle.w, playerPaddle.x));
+            } else {
+                playerPaddle.y = Math.max(playfield.y, Math.min(playfield.y + playfield.h - playerPaddle.h, playerPaddle.y));
+            }
 
             const aiSpeed = 3.2 + level * 0.55;
-            const targetY = ball.y - cpuPaddle.h / 2;
-            cpuPaddle.y += Math.sign(targetY - cpuPaddle.y) * Math.min(Math.abs(targetY - cpuPaddle.y), aiSpeed);
-            cpuPaddle.y = Math.max(playfield.y, Math.min(playfield.y + playfield.h - cpuPaddle.h, cpuPaddle.y));
+            if (isTouchDevice) {
+                const targetX = ball.x - cpuPaddle.w / 2;
+                cpuPaddle.x += Math.sign(targetX - cpuPaddle.x) * Math.min(Math.abs(targetX - cpuPaddle.x), aiSpeed);
+                cpuPaddle.x = Math.max(playfield.x, Math.min(playfield.x + playfield.w - cpuPaddle.w, cpuPaddle.x));
+            } else {
+                const targetY = ball.y - cpuPaddle.h / 2;
+                cpuPaddle.y += Math.sign(targetY - cpuPaddle.y) * Math.min(Math.abs(targetY - cpuPaddle.y), aiSpeed);
+                cpuPaddle.y = Math.max(playfield.y, Math.min(playfield.y + playfield.h - cpuPaddle.h, cpuPaddle.y));
+            }
 
             ball.x += ball.vx;
             ball.y += ball.vy;
-            if (ball.y - ball.radius <= playfield.y) { ball.y = playfield.y + ball.radius; ball.vy *= -1; spawnImpactParticles(ball.x, ball.y, '#fff'); }
-            if (ball.y + ball.radius >= playfield.y + playfield.h) { ball.y = playfield.y + playfield.h - ball.radius; ball.vy *= -1; spawnImpactParticles(ball.x, ball.y, '#fff'); }
+            if (isTouchDevice) {
+                if (ball.x - ball.radius <= playfield.x) { ball.x = playfield.x + ball.radius; ball.vx *= -1; spawnImpactParticles(ball.x, ball.y, '#fff'); }
+                if (ball.x + ball.radius >= playfield.x + playfield.w) { ball.x = playfield.x + playfield.w - ball.radius; ball.vx *= -1; spawnImpactParticles(ball.x, ball.y, '#fff'); }
+            } else {
+                if (ball.y - ball.radius <= playfield.y) { ball.y = playfield.y + ball.radius; ball.vy *= -1; spawnImpactParticles(ball.x, ball.y, '#fff'); }
+                if (ball.y + ball.radius >= playfield.y + playfield.h) { ball.y = playfield.y + playfield.h - ball.radius; ball.vy *= -1; spawnImpactParticles(ball.x, ball.y, '#fff'); }
+            }
 
             [leftPaddle, rightPaddle].forEach((paddle, index) => {
-                const movingLeft = ball.vx < 0;
-                const hitsLeft = index === 0 && movingLeft && ball.x - ball.radius <= paddle.x + paddle.w && ball.x > paddle.x;
-                const hitsRight = index === 1 && !movingLeft && ball.x + ball.radius >= paddle.x && ball.x < paddle.x + paddle.w;
-                if ((hitsLeft || hitsRight) && ball.y >= paddle.y && ball.y <= paddle.y + paddle.h) {
-                    const hitPoint = (ball.y - (paddle.y + paddle.h / 2)) / (paddle.h / 2);
-                    const speed = 4.8 + level * 0.55 + Math.min(2.5, Math.abs(hitPoint) * 1.2);
-                    const angle = hitPoint * 0.9;
-                    ball.vx = (index === 0 ? 1 : -1) * speed * Math.cos(angle);
-                    ball.vy = speed * Math.sin(angle);
-                    ball.x = index === 0 ? paddle.x + paddle.w + ball.radius : paddle.x - ball.radius;
-                    spawnImpactParticles(ball.x, ball.y, index === 0 ? varColor('--neon-cyan') : varColor('--neon-pink'));
+                if (isTouchDevice) {
+                    const movingUp = ball.vy < 0;
+                    const hitsTop = index === 0 && movingUp && ball.y - ball.radius <= paddle.y + paddle.h && ball.y > paddle.y;
+                    const hitsBottom = index === 1 && !movingUp && ball.y + ball.radius >= paddle.y && ball.y < paddle.y + paddle.h;
+                    if ((hitsTop || hitsBottom) && ball.x >= paddle.x && ball.x <= paddle.x + paddle.w) {
+                        const hitPoint = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+                        const speed = 4.8 + level * 0.55 + Math.min(2.5, Math.abs(hitPoint) * 1.2);
+                        const angle = hitPoint * 0.9;
+                        ball.vy = (index === 0 ? 1 : -1) * speed * Math.cos(angle);
+                        ball.vx = speed * Math.sin(angle);
+                        ball.y = index === 0 ? paddle.y + paddle.h + ball.radius : paddle.y - ball.radius;
+                        spawnImpactParticles(ball.x, ball.y, index === 0 ? varColor('--neon-cyan') : varColor('--neon-pink'));
+                    }
+                } else {
+                    const movingLeft = ball.vx < 0;
+                    const hitsLeft = index === 0 && movingLeft && ball.x - ball.radius <= paddle.x + paddle.w && ball.x > paddle.x;
+                    const hitsRight = index === 1 && !movingLeft && ball.x + ball.radius >= paddle.x && ball.x < paddle.x + paddle.w;
+                    if ((hitsLeft || hitsRight) && ball.y >= paddle.y && ball.y <= paddle.y + paddle.h) {
+                        const hitPoint = (ball.y - (paddle.y + paddle.h / 2)) / (paddle.h / 2);
+                        const speed = 4.8 + level * 0.55 + Math.min(2.5, Math.abs(hitPoint) * 1.2);
+                        const angle = hitPoint * 0.9;
+                        ball.vx = (index === 0 ? 1 : -1) * speed * Math.cos(angle);
+                        ball.vy = speed * Math.sin(angle);
+                        ball.x = index === 0 ? paddle.x + paddle.w + ball.radius : paddle.x - ball.radius;
+                        spawnImpactParticles(ball.x, ball.y, index === 0 ? varColor('--neon-cyan') : varColor('--neon-pink'));
+                    }
                 }
             });
 
-            if (ball.x < playfield.x) {
-                rightPaddle.score += 1;
-                updateScoreDisplays();
-                if (rightPaddle.score >= 7) finishGame(playerSide === 'right'); else resetPositions(1);
-            }
-            if (ball.x > playfield.x + playfield.w) {
-                leftPaddle.score += 1;
-                updateScoreDisplays();
-                if (leftPaddle.score >= 7) finishGame(playerSide === 'left'); else resetPositions(-1);
+            if (isTouchDevice) {
+                if (ball.y < playfield.y) {
+                    rightPaddle.score += 1;
+                    updateScoreDisplays();
+                    if (rightPaddle.score >= 7) finishGame(playerSide === 'right'); else resetPositions(1);
+                }
+                if (ball.y > playfield.y + playfield.h) {
+                    leftPaddle.score += 1;
+                    updateScoreDisplays();
+                    if (leftPaddle.score >= 7) finishGame(playerSide === 'left'); else resetPositions(-1);
+                }
+            } else {
+                if (ball.x < playfield.x) {
+                    rightPaddle.score += 1;
+                    updateScoreDisplays();
+                    if (rightPaddle.score >= 7) finishGame(playerSide === 'right'); else resetPositions(1);
+                }
+                if (ball.x > playfield.x + playfield.w) {
+                    leftPaddle.score += 1;
+                    updateScoreDisplays();
+                    if (leftPaddle.score >= 7) finishGame(playerSide === 'left'); else resetPositions(-1);
+                }
             }
         }
 
@@ -392,7 +501,7 @@
             ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.save();
             ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(playfield.x, playfield.y, playfield.w, playfield.h, 20); ctx.stroke();
-            ctx.setLineDash([14, 14]); ctx.beginPath(); ctx.moveTo(playfield.x + playfield.w / 2, playfield.y); ctx.lineTo(playfield.x + playfield.w / 2, playfield.y + playfield.h); ctx.stroke(); ctx.setLineDash([]);
+            ctx.setLineDash([14, 14]); ctx.beginPath(); if (isTouchDevice) { ctx.moveTo(playfield.x, playfield.y + playfield.h / 2); ctx.lineTo(playfield.x + playfield.w, playfield.y + playfield.h / 2); } else { ctx.moveTo(playfield.x + playfield.w / 2, playfield.y); ctx.lineTo(playfield.x + playfield.w / 2, playfield.y + playfield.h); } ctx.stroke(); ctx.setLineDash([]);
 
             ctx.shadowBlur = 15; ctx.shadowColor = varColor('--neon-cyan'); ctx.fillStyle = varColor('--neon-cyan'); ctx.beginPath(); ctx.roundRect(leftPaddle.x, leftPaddle.y, leftPaddle.w, leftPaddle.h, 8); ctx.fill();
             ctx.shadowColor = varColor('--neon-pink'); ctx.fillStyle = varColor('--neon-pink'); ctx.beginPath(); ctx.roundRect(rightPaddle.x, rightPaddle.y, rightPaddle.w, rightPaddle.h, 8); ctx.fill();
@@ -410,7 +519,7 @@
 
         function loop() { update(); draw(); requestAnimationFrame(loop); }
 
-        nickInput.addEventListener('input', () => { nickInput.value = sanitizeNick(nickInput.value); });
+        uiHelper?.attachNicknameValidation(nickInput);
         levelSelect.addEventListener('change', updateLevelPreview);
         window.addEventListener('resize', resizeGame);
         window.addEventListener('keydown', (e) => {
@@ -419,8 +528,8 @@
             if (e.code === 'Space' && (currentState === STATES.START || currentState === STATES.GAMEOVER)) { e.preventDefault(); startGame(); }
         });
         window.addEventListener('keyup', (e) => { keys[e.code] = false; });
-        canvas.addEventListener('pointerdown', (e) => { pointerY = e.clientY; if (currentState === STATES.PAUSED) resumeGame(); });
-        canvas.addEventListener('pointermove', (e) => { pointerY = e.clientY; });
+        canvas.addEventListener('pointerdown', (e) => { pointerY = e.clientY; pointerX = e.clientX; if (currentState === STATES.PAUSED) resumeGame(); });
+        canvas.addEventListener('pointermove', (e) => { pointerY = e.clientY; pointerX = e.clientX; });
 
         document.getElementById('startButton').addEventListener('click', startGame);
         document.getElementById('resumeButton').addEventListener('click', resumeGame);

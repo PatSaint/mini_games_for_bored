@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arcade Hub | Antiaurrimiento</title>
+    <meta name="theme-color" content="#020204">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -138,6 +142,11 @@
             font-weight: 300;
             color: rgba(255, 255, 255, 0.4);
             letter-spacing: 1px;
+        }
+
+        .hub-actions {
+            margin-top: 20px;
+            width: min(100%, 360px);
         }
 
         /* Grilla de Juegos Compacta */
@@ -364,6 +373,7 @@
         <header class="header">
             <h1 class="hub-title">ARCADE<span>HUB</span></h1>
             <p class="hub-subtitle">Selecciona un juego para combatir el aburrimiento</p>
+            <div class="hub-actions" data-install-slot></div>
         </header>
 
         <!-- Grilla de Juegos -->
@@ -424,7 +434,7 @@
                 <div class="card-top">
                     <span class="game-badge">ONLINE</span>
                     <h2 class="game-title">FLAPPY NEON</h2>
-                    <p class="game-desc">Esquiva los pilares neón pulsando la barra espaciadora.</p>
+                    <p class="game-desc" data-touch-text="Esquivá los pilares neón tocando la pantalla." data-desktop-text="Esquiva los pilares neón pulsando la barra espaciadora.">Esquiva los pilares neón pulsando la barra espaciadora.</p>
                 </div>
                 <div class="play-indicator">JUGAR ➔</div>
             </a>
@@ -476,5 +486,6 @@
             HEXAGON ARCADE &copy; 2026
         </footer>
     </div>
+    <script src="app-shell.js"></script>
 </body>
 </html>

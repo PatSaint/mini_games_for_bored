@@ -133,6 +133,7 @@ let baseLevel = 1;
 let currentLevel = 1; // Nivel actual sumando progreso de líneas
 let dropInterval = 1000; // ms
 let currentNickname = 'PLAYER';
+const uiHelper = window.BORED_UI;
 
 // Tiempos y Ciclo
 let lastDropTime = 0;
@@ -143,20 +144,11 @@ let flashDuration = 0; // Temporizador de animación de eliminación
 
 highScoreDisplay.textContent = highScore;
 nicknameInput.value = currentNickname;
-nicknameInput.addEventListener('input', () => {
-    const sanitized = sanitizeNickname(nicknameInput.value);
-    if (nicknameInput.value !== sanitized) {
-        nicknameInput.value = sanitized;
-    }
-});
+uiHelper?.attachNicknameValidation(nicknameInput);
 renderTopScores();
 
 function sanitizeNickname(value) {
-    return (value || '')
-        .toUpperCase()
-        .replace(/[^A-Z0-9ÁÉÍÓÚÜÑ _-]/gi, '')
-        .trim()
-        .slice(0, 10) || 'PLAYER';
+    return uiHelper?.normalizeNickname(value) || '';
 }
 
 function loadTopScores() {
@@ -359,7 +351,11 @@ mobilePauseButton.addEventListener('click', () => {
 // --- ACCIONES DEL JUEGO ---
 
 function startGame() {
-    currentNickname = sanitizeNickname(nicknameInput.value);
+    const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: 'Ingresá tu nombre antes de arrancar Tetris.' }) ?? sanitizeNickname(nicknameInput.value);
+    if (!validatedNickname) {
+        return;
+    }
+    currentNickname = validatedNickname;
     nicknameInput.value = currentNickname;
     // Vaciar tablero
     board = Array(BOARD_ROWS).fill(null).map(() => Array(BOARD_COLS).fill(0));

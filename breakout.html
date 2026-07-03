@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neon Breakout | Juego Retro-Moderno</title>
+    <meta name="theme-color" content="#020204">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -56,7 +60,7 @@
         <div class="hud-panel"><span class="hud-label">BOLAS</span><span id="ballsDisplay" class="hud-val yellow">1</span></div>
         <div class="hud-panel"><span class="hud-label">TOP</span><span id="bestDisplay" class="hud-val green">0</span></div>
     </div>
-    <div class="touch-hint">← → / A D / mouse / touch para mover · ESC pausa</div>
+    <div class="touch-hint" data-touch-text="Arrastrá o tocá la cancha para mover · pausa desde el menú" data-desktop-text="← → / A D / mouse / touch para mover · ESC pausa">← → / A D / mouse / touch para mover · ESC pausa</div>
     <div id="overlay" class="overlay-screen">
         <div id="homeScreen" class="menu-content">
             <h1 class="game-title">NEON<br><span>BREAKOUT</span></h1>
@@ -66,7 +70,8 @@
             <div class="card" id="levelPreview"></div>
             <div><div class="section-title">QUICK GAME</div><div class="quick-row"><button class="quick-btn" data-quick-level="2">RELAX</button><button class="quick-btn" data-quick-level="5">ARCADE</button><button class="quick-btn" data-quick-level="8">MAYHEM</button></div></div>
             <div class="card"><div class="section-title">POWERUPS</div><div class="power-row"><span>❤ Vida</span><span>✦ Multibola</span></div><div class="power-row"><span>▭ Pala grande</span><span>▯ Pala chica</span></div><div class="power-row"><span>❄ Bola lenta</span><span>Bloques con borde blanco</span></div></div>
-            <div class="card"><div class="section-title">CÓMO JUGAR</div><ul class="instructions"><li>PC: teclado, mouse o click.</li><li>Móvil/tablet: arrastrá o tocá donde querés la pala.</li><li>ESC abre pausa con reanudar, reiniciar o volver al menú.</li></ul></div>
+            <div class="card"><div class="section-title">CÓMO JUGAR</div><ul class="instructions"><li data-device-show="desktop">PC: teclado, mouse o click.</li><li data-device-show="touch">Móvil/tablet: arrastrá o tocá donde querés la pala.</li><li>ESC abre pausa con reanudar, reiniciar o volver al menú.</li></ul></div>
+            <div data-install-slot></div>
             <button id="startButton" class="action-btn">EMPEZAR PARTIDA</button>
             <div class="leaderboard"><div class="section-title">TOP 10</div><div id="leaderboard"></div></div>
             <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
@@ -74,6 +79,7 @@
         <div id="pauseScreen" class="menu-content hidden"><h2 class="game-title">PAUSA</h2><div class="card" id="pauseSummary"></div><button id="resumeButton" class="action-btn">REANUDAR</button><button id="restartButton" class="action-btn">REINICIAR</button><button id="homeButton" class="action-btn">MENÚ INICIAL</button></div>
         <div id="gameOverScreen" class="menu-content hidden"><h2 id="gameOverTitle" class="game-title">RESULTADO</h2><div class="card" id="gameOverSummary"></div><button id="playAgainButton" class="action-btn">JUGAR OTRA</button><button id="gameOverHomeButton" class="action-btn">MENÚ INICIAL</button></div>
     </div>
+    <script src="app-shell.js"></script>
     <script>
         const STORAGE_KEY = 'bored.breakout.top10';
         const SETTINGS_KEY = 'bored.breakout.settings';
@@ -102,14 +108,15 @@
         const nickInput = document.getElementById('nickInput'); const levelSelect = document.getElementById('levelSelect'); const levelPreview = document.getElementById('levelPreview'); const leaderboard = document.getElementById('leaderboard'); const pauseSummary = document.getElementById('pauseSummary'); const gameOverSummary = document.getElementById('gameOverSummary');
         const scoreDisplay = document.getElementById('scoreDisplay'); const livesDisplay = document.getElementById('livesDisplay'); const ballsDisplay = document.getElementById('ballsDisplay'); const bestDisplay = document.getElementById('bestDisplay'); const hudNick = document.getElementById('hudNick'); const gameOverTitle = document.getElementById('gameOverTitle');
         let state = STATES.HOME, currentLevel = LEVELS[0], nickname = 'JUGADOR', score = 0, lives = 3, animationId = 0;
+        const uiHelper = window.BORED_UI;
         let paddle = { x:0, y:0, w:120, h:16, speed:9, effect:'normal', effectTimer:0 }, balls = [], bricks = [], particles = [], powerDrops = [];
         let pointerX = null, keys = {}, baseSpeed = 5.5;
-        function sanitizeNick(value){ return (value || 'JUGADOR').toUpperCase().replace(/[^A-Z0-9ÁÉÍÓÚÜÑ_-]/gi,'').slice(0,10) || 'JUGADOR'; }
+        function sanitizeNick(value){ return uiHelper?.normalizeNickname(value) || ''; }
         function loadTop10(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
         function saveTop10(entry){ const scores = loadTop10(); scores.push(entry); scores.sort((a,b)=>b.score-a.score || a.level-b.level || a.time-b.time); const top = scores.slice(0,10); localStorage.setItem(STORAGE_KEY, JSON.stringify(top)); return top; }
         function renderTop10(){ const scores = loadTop10(); bestDisplay.textContent = scores[0]?.score || 0; leaderboard.innerHTML = scores.length ? scores.map((s,i)=>`<div class="board-row"><span>#${i+1} ${s.nick}</span><strong>${s.score}</strong><span>N${s.level}</span></div>`).join('') : '<div class="muted">Todavía no hay leyendas breakout.</div>'; }
         function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify({ nick:nickname, level:currentLevel.id })); }
-        function loadSettings(){ try { const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); nickname = sanitizeNick(saved.nick); currentLevel = LEVELS.find(level=>level.id === Number(saved.level)) || LEVELS[0]; } catch {} }
+        function loadSettings(){ try { const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); nickname = sanitizeNick(saved.nick) || 'JUGADOR'; currentLevel = LEVELS.find(level=>level.id === Number(saved.level)) || LEVELS[0]; } catch {} }
         function showScreen(screen){ overlay.classList.remove('hidden'); [homeScreen,pauseScreen,gameOverScreen].forEach(node=>node.classList.add('hidden')); screen.classList.remove('hidden'); }
         function hideOverlay(){ overlay.classList.add('hidden'); }
         function setLevel(levelId){ currentLevel = LEVELS.find(level=>level.id === Number(levelId)) || LEVELS[0]; levelSelect.value = String(currentLevel.id); levelPreview.innerHTML = `<div class="stats-row"><span>Nivel</span><strong>${currentLevel.name}</strong></div><div class="stats-row"><span>Filas × columnas</span><strong>${currentLevel.rows} × ${currentLevel.cols}</strong></div><div class="stats-row"><span>Velocidad base</span><strong>${currentLevel.speed.toFixed(1)}</strong></div><div class="stats-row"><span>Sorpresas</span><strong>${Math.round(currentLevel.surprise*100)}%</strong></div>`; saveSettings(); }
@@ -117,8 +124,8 @@
         function spawnBall(x = paddle.x + paddle.w / 2, y = paddle.y - 12, speed = baseSpeed){ const angle = (-70 + Math.random() * 40) * Math.PI / 180; balls.push({ x, y, vx:Math.cos(angle) * speed, vy:-Math.abs(Math.sin(angle) * speed), r:8, tint:'#ffffff' }); ballsDisplay.textContent = balls.length; }
         function spawnParticles(x,y,color,count=8){ for(let i=0;i<count;i++){ const angle=Math.random()*Math.PI*2; const speed=.8+Math.random()*3; particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,size:1+Math.random()*2.5,alpha:1,color}); } }
         function initBricks(){ bricks = []; const margin = 28, top = 108, gap = 8; const totalGap = (currentLevel.cols - 1) * gap; const brickW = (canvas.width - margin*2 - totalGap) / currentLevel.cols; const brickH = 20; const colors = ['#ff007f','#b026ff','#00f0ff','#39ff14','#ffcc00','#ff9900']; for(let r=0;r<currentLevel.rows;r++){ for(let c=0;c<currentLevel.cols;c++){ const power = Math.random() < currentLevel.surprise ? POWERUPS[Math.floor(Math.random()*POWERUPS.length)] : null; bricks.push({ x:margin + c * (brickW + gap), y:top + r * (brickH + gap), w:brickW, h:brickH, hp:1 + (r > currentLevel.rows - 3 ? 1 : 0), color:colors[r % colors.length], power }); } } }
-        function resetGame(levelId = currentLevel.id){ nickname = sanitizeNick(nickInput.value); nickInput.value = nickname; hudNick.textContent = nickname; setLevel(levelId); resize(); score = 0; lives = currentLevel.lives; paddle.w = currentLevel.paddle; paddle.effect = 'normal'; paddle.effectTimer = 0; paddle.x = canvas.width / 2 - paddle.w / 2; baseSpeed = currentLevel.speed; balls = []; powerDrops = []; particles = []; initBricks(); spawnBall(); scoreDisplay.textContent = '0'; livesDisplay.textContent = String(lives); ballsDisplay.textContent = '1'; }
-        function startGame(levelId = currentLevel.id){ resetGame(levelId); state = STATES.PLAYING; hideOverlay(); }
+        function resetGame(levelId = currentLevel.id){ const validatedNickname = uiHelper?.requireNickname(nickInput, { message: 'Ingresá tu nombre antes de arrancar Breakout.' }) ?? sanitizeNick(nickInput.value); if (!validatedNickname) return false; nickname = validatedNickname; nickInput.value = nickname; hudNick.textContent = nickname; setLevel(levelId); resize(); score = 0; lives = currentLevel.lives; paddle.w = currentLevel.paddle; paddle.effect = 'normal'; paddle.effectTimer = 0; paddle.x = canvas.width / 2 - paddle.w / 2; baseSpeed = currentLevel.speed; balls = []; powerDrops = []; particles = []; initBricks(); spawnBall(); scoreDisplay.textContent = '0'; livesDisplay.textContent = String(lives); ballsDisplay.textContent = '1'; return true; }
+        function startGame(levelId = currentLevel.id){ if (!resetGame(levelId)) return; state = STATES.PLAYING; hideOverlay(); }
         function pauseGame(){ if (state !== STATES.PLAYING) return; state = STATES.PAUSED; pauseSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntos</span><strong>${score}</strong></div><div class="stats-row"><span>Vidas</span><strong>${lives}</strong></div><div class="stats-row"><span>Nivel</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div>`; showScreen(pauseScreen); }
         function resumeGame(){ if (state !== STATES.PAUSED) return; state = STATES.PLAYING; hideOverlay(); }
         function goHome(){ state = STATES.HOME; renderTop10(); showScreen(homeScreen); }
@@ -137,11 +144,11 @@
         function loop(){ update(); draw(); animationId = requestAnimationFrame(loop); }
         LEVELS.forEach(level => { const option = document.createElement('option'); option.value = level.id; option.textContent = `${level.id} · ${level.name}`; levelSelect.appendChild(option); });
         document.getElementById('startButton').addEventListener('click', () => startGame()); document.getElementById('resumeButton').addEventListener('click', resumeGame); document.getElementById('restartButton').addEventListener('click', () => startGame()); document.getElementById('homeButton').addEventListener('click', goHome); document.getElementById('playAgainButton').addEventListener('click', () => startGame()); document.getElementById('gameOverHomeButton').addEventListener('click', goHome);
-        levelSelect.addEventListener('change', e => setLevel(e.target.value)); nickInput.addEventListener('input', e => { nickname = sanitizeNick(e.target.value); e.target.value = nickname; hudNick.textContent = nickname; saveSettings(); }); document.querySelectorAll('[data-quick-level]').forEach(btn => btn.addEventListener('click', () => startGame(btn.dataset.quickLevel)));
+        levelSelect.addEventListener('change', e => setLevel(e.target.value)); uiHelper?.attachNicknameValidation(nickInput, { onChange: (value) => { nickname = value; hudNick.textContent = value || '-'; saveSettings(); } }); document.querySelectorAll('[data-quick-level]').forEach(btn => btn.addEventListener('click', () => startGame(btn.dataset.quickLevel)));
         window.addEventListener('resize', resize); window.addEventListener('keydown', e => { if (['ArrowLeft','ArrowRight','Space','Escape'].includes(e.code)) e.preventDefault(); keys[e.code] = true; if (e.code === 'Escape') { if (state === STATES.PLAYING) pauseGame(); else if (state === STATES.PAUSED) resumeGame(); return; } if (e.code === 'Space' && (state === STATES.HOME || state === STATES.GAMEOVER)) startGame(); }); window.addEventListener('keyup', e => { keys[e.code] = false; });
         function updatePointer(clientX){ pointerX = clientX; }
         window.addEventListener('mousemove', e => updatePointer(e.clientX)); window.addEventListener('mousedown', e => updatePointer(e.clientX)); window.addEventListener('touchstart', e => { if (e.touches[0]) { e.preventDefault(); updatePointer(e.touches[0].clientX); if (state === STATES.HOME || state === STATES.GAMEOVER) startGame(); } }, { passive:false }); window.addEventListener('touchmove', e => { if (e.touches[0]) { e.preventDefault(); updatePointer(e.touches[0].clientX); } }, { passive:false });
-        loadSettings(); nickInput.value = nickname; hudNick.textContent = nickname; setLevel(currentLevel.id); resize(); renderTop10(); goHome(); animationId = requestAnimationFrame(loop);
+        document.querySelector('.back-btn')?.addEventListener('click', (event) => { if (state === STATES.PLAYING && !window.confirm('¿Seguro que querés salir de Breakout?')) { event.preventDefault(); } }); loadSettings(); nickInput.value = nickname; hudNick.textContent = nickname; setLevel(currentLevel.id); resize(); renderTop10(); goHome(); animationId = requestAnimationFrame(loop);
     </script>
 </body>
 </html>

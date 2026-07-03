@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neon Space Invaders | Juego Retro-Moderno</title>
+    <meta name="theme-color" content="#020204">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -16,6 +20,7 @@
             --neon-cyan: #00f0ff;
             --neon-pink: #ff007f;
             --neon-green: #39ff14;
+            --mobile-controls-offset: calc(112px + env(safe-area-inset-bottom, 0px));
             --glow-purple: 0 0 10px rgba(176, 38, 255, 0.6), 0 0 20px rgba(176, 38, 255, 0.3);
             --glow-cyan: 0 0 10px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.3);
             --glow-pink: 0 0 10px rgba(255, 0, 127, 0.6), 0 0 20px rgba(255, 0, 127, 0.3);
@@ -111,8 +116,9 @@
         .top-note { font-size: 12px; color: rgba(255,255,255,.55); }
 
         .dpad-actions-layout {
-            position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); width: min(100%, 520px); height: 150px; display: none;
+            position: absolute; bottom: var(--mobile-controls-offset); left: 50%; transform: translateX(-50%); width: min(100%, 520px); height: 150px; display: none;
             justify-content: space-between; align-items: center; padding: 0 20px; z-index: 40;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         .gamepad-left { position: relative; width: 120px; height: 120px; }
         .gamepad-right { display: flex; align-items: center; gap: 12px; }
@@ -167,7 +173,7 @@
     <div id="overlay" class="overlay-screen">
         <div id="startScreen" class="menu-content">
             <h1 class="game-title">SPACE<br><span>INVADERS</span></h1>
-            <p class="game-subtitle">Arrancá tranquilo, elegí nivel y nickname, y preparate: la próxima oleada SIEMPRE avisa antes de largar.</p>
+            <p class="game-subtitle" data-touch-text="Arrancá tranquilo, elegí nivel y nickname, y preparate: la próxima oleada SIEMPRE avisa antes de largar. En touch usá el pad y el botón FUEGO." data-desktop-text="Arrancá tranquilo, elegí nivel y nickname, y preparate: la próxima oleada SIEMPRE avisa antes de largar.">Arrancá tranquilo, elegí nivel y nickname, y preparate: la próxima oleada SIEMPRE avisa antes de largar.</p>
             <div class="form-grid">
                 <div class="field">
                     <label for="nickInput">NICKNAME</label>
@@ -184,11 +190,12 @@
                 <div class="preview-item"><span>Ritmo de ataque</span><span id="attackPreview" class="preview-val">--</span></div>
             </div>
             <div class="controls-guide">
-                <div class="control-row"><span>PC:</span><span class="control-key">A/D o ◄/► + ESPACIO</span></div>
-                <div class="control-row"><span>Táctil:</span><span class="control-key">PAD + FUEGO</span></div>
+                <div class="control-row" data-device-show="desktop"><span>PC:</span><span class="control-key">A/D o ◄/► + ESPACIO</span></div>
+                <div class="control-row" data-device-show="touch"><span>Táctil:</span><span class="control-key">PAD + FUEGO</span></div>
                 <div class="control-row"><span>Pausa:</span><span class="control-key">ESC o botón II</span></div>
-                <div class="control-row"><span>Inicio:</span><span class="control-key">Botón START</span></div>
+                <div class="control-row"><span>Inicio:</span><span class="control-key" data-touch-text="TOCÁ START" data-desktop-text="ESPACIO o START">Botón START</span></div>
             </div>
+            <div data-install-slot></div>
             <div class="button-row">
                 <button id="startButton" class="action-btn">START</button>
                 <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
@@ -240,6 +247,7 @@
         </div>
     </div>
 
+    <script src="app-shell.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -273,6 +281,7 @@
         const STATES = { START: 'START', COUNTDOWN: 'COUNTDOWN', PLAYING: 'PLAYING', PAUSED: 'PAUSED', BETWEEN_WAVES: 'BETWEEN_WAVES', GAMEOVER: 'GAMEOVER' };
         let currentState = STATES.START;
         let playerNick = 'PLAYER1';
+        const uiHelper = window.BORED_UI;
         let score = 0;
         let lives = 3;
         let level = 1;
@@ -296,7 +305,7 @@
         let alienShootChance = 0.0028;
 
         function sanitizeNick(value) {
-            return (value || 'PLAYER1').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 10) || 'PLAYER1';
+            return uiHelper?.normalizeNickname(value) || '';
         }
 
         function getTopScores() {
@@ -337,7 +346,8 @@
         function resizeGame() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            player.y = canvas.height - (window.innerWidth <= 768 ? 110 : 70);
+            const mobileReserve = window.innerWidth <= 768 ? 250 : 70;
+            player.y = canvas.height - mobileReserve;
             player.x = Math.max(20, Math.min(canvas.width - player.w - 20, player.x || canvas.width / 2 - player.w / 2));
             cols = Math.max(6, Math.min(11, Math.floor(canvas.width / 105)));
             rows = Math.max(4, Math.min(6, Math.floor(canvas.height / 180)));
@@ -407,7 +417,9 @@
         function hideOverlay() { overlay.classList.add('hidden'); }
 
         function startGame(resetScore = true, preserveLevel = false) {
-            playerNick = sanitizeNick(nickInput.value);
+            const validatedNickname = uiHelper?.requireNickname(nickInput, { message: 'Ingresá tu nombre antes de defender la galaxia.' }) ?? sanitizeNick(nickInput.value);
+            if (!validatedNickname) return;
+            playerNick = validatedNickname;
             nickInput.value = playerNick;
             if (!preserveLevel) {
                 level = Number(levelSelect.value || 1);
@@ -647,7 +659,7 @@
 
         window.addEventListener('resize', resizeGame);
         levelSelect.addEventListener('change', updateDifficultyPreview);
-        nickInput.addEventListener('input', () => { nickInput.value = sanitizeNick(nickInput.value); });
+        uiHelper?.attachNicknameValidation(nickInput);
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Escape') { e.preventDefault(); if (currentState === STATES.PAUSED) resumeGame(); else pauseGame(); return; }
             keys[e.code] = true;

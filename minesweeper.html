@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neon Buscaminas | Juego Retro-Moderno</title>
+    <meta name="theme-color" content="#020204">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -108,10 +112,11 @@
                 <div class="preview-item"><span>Densidad</span><span id="densityPreview" class="preview-val">--</span></div>
             </div>
             <div class="controls-guide">
-                <div class="control-row"><span>PC</span><span class="control-key">CLICK revela / CLICK DERECHO bandera</span></div>
-                <div class="control-row"><span>Touch</span><span class="control-key">Botón REVELAR o BANDERA</span></div>
+                <div class="control-row" data-device-show="desktop"><span>PC</span><span class="control-key">CLICK revela / CLICK DERECHO bandera</span></div>
+                <div class="control-row" data-device-show="touch"><span>Touch</span><span class="control-key">Botón REVELAR o BANDERA</span></div>
                 <div class="control-row"><span>Pausa</span><span class="control-key">ESC o botón PAUSA</span></div>
             </div>
+            <div data-install-slot></div>
             <div class="button-row">
                 <button id="startButton" class="action-btn">START</button>
                 <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
@@ -163,6 +168,7 @@
         </div>
     </div>
 
+    <script src="app-shell.js"></script>
     <script>
         const canvas = document.getElementById('minesCanvas');
         const ctx = canvas.getContext('2d');
@@ -198,6 +204,7 @@
         let currentState = STATES.START;
         let currentInputMode = INPUT_MODES.REVEAL;
         let playerNick = 'PLAYER1';
+        const uiHelper = window.BORED_UI;
         let selectedLevel = 1;
         let cols = 10, rows = 10, mineCount = 15, cellSize = 34;
         let grid = [];
@@ -209,11 +216,11 @@
 
         const NUMBER_COLORS = ['', '#00f0ff', '#39ff14', '#ff007f', '#b026ff', '#ff073a', '#ffcc00', '#ff9900', '#ffffff'];
 
-        function sanitizeNick(value) { return (value || 'PLAYER1').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 10) || 'PLAYER1'; }
+        function sanitizeNick(value) { return uiHelper?.normalizeNickname(value) || ''; }
         function getTopScores() { try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch { return []; } }
         function saveTopScore(gameKey, nick, score) {
             const list = getTopScores();
-            list.push({ nick: sanitizeNick(nick), score: Number(score) || 0, level: selectedLevel, at: Date.now(), gameKey });
+            list.push({ nick: sanitizeNick(nick) || 'PLAYER1', score: Number(score) || 0, level: selectedLevel, at: Date.now(), gameKey });
             list.sort((a, b) => b.score - a.score || b.level - a.level || a.at - b.at);
             const top10 = list.slice(0, 10);
             localStorage.setItem(storageKey, JSON.stringify(top10));
@@ -285,7 +292,9 @@
         }
 
         function startGame() {
-            playerNick = sanitizeNick(nickInput.value);
+            const validatedNickname = uiHelper?.requireNickname(nickInput, { message: 'Ingresá tu nombre antes de abrir el tablero.' }) ?? sanitizeNick(nickInput.value);
+            if (!validatedNickname) return;
+            playerNick = validatedNickname;
             nickInput.value = playerNick;
             currentState = STATES.PLAYING;
             stateDisplay.textContent = 'JUGANDO';
@@ -433,7 +442,7 @@
             if (currentState === STATES.START) initGrid();
         });
         levelSelect.addEventListener('change', () => { resizeGrid(); if (currentState === STATES.START) initGrid(); });
-        nickInput.addEventListener('input', () => { nickInput.value = sanitizeNick(nickInput.value); });
+        uiHelper?.attachNicknameValidation(nickInput);
         btnReveal.addEventListener('click', () => setInputMode(INPUT_MODES.REVEAL));
         btnFlag.addEventListener('click', () => setInputMode(INPUT_MODES.FLAG));
         document.getElementById('btnPause').addEventListener('click', pauseGame);

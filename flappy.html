@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flappy Neon | Juego Retro-Moderno</title>
+    <meta name="theme-color" content="#020204">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -56,7 +60,7 @@
         <div class="hud-panel"><span class="hud-label">NIVEL</span><span id="levelDisplay" class="hud-val orange">1</span></div>
         <div class="hud-panel"><span class="hud-label">TOP</span><span id="bestDisplay" class="hud-val green">0</span></div>
     </div>
-    <div class="touch-hint">ESPACIO / ↑ / CLICK / TAP para volar · ESC pausa</div>
+    <div class="touch-hint" data-touch-text="Tocá la pantalla para volar · pausa desde el menú" data-desktop-text="ESPACIO / ↑ / CLICK / TAP para volar · ESC pausa">ESPACIO / ↑ / CLICK / TAP para volar · ESC pausa</div>
     <div id="overlay" class="overlay-screen">
         <div id="homeScreen" class="menu-content">
             <h1 class="game-title">FLAPPY<br><span>NEON</span></h1>
@@ -77,11 +81,12 @@
             <div class="card">
                 <div class="section-title">CÓMO JUGAR</div>
                 <ul class="instructions">
-                    <li>PC: Espacio, flecha arriba o click para impulsar.</li>
-                    <li>Touch: tap en cualquier lado del juego.</li>
+                    <li data-device-show="desktop">PC: Espacio, flecha arriba o click para impulsar.</li>
+                    <li data-device-show="touch">Touch: tocá en cualquier lado del juego.</li>
                     <li>ESC abre pausa con reanudar, reiniciar o volver al menú.</li>
                 </ul>
             </div>
+            <div data-install-slot></div>
             <button id="startButton" class="action-btn">INICIAR VUELO</button>
             <div class="leaderboard"><div class="section-title">TOP 10</div><div id="leaderboard"></div></div>
             <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
@@ -101,6 +106,7 @@
             <button id="gameOverHomeButton" class="action-btn">MENÚ INICIAL</button>
         </div>
     </div>
+    <script src="app-shell.js"></script>
     <script>
         const STORAGE_KEY = 'bored.flappyNeon.top10';
         const SETTINGS_KEY = 'bored.flappyNeon.settings';
@@ -136,20 +142,21 @@
         let state = STATES.HOME, currentLevel = LEVELS[0], animationId = 0, frame = 0, score = 0;
         let bird = { x:110, y:240, vy:0, r:14, gravity:.42, jump:-7.6 };
         let pipes = [], particles = [], lastTime = 0, nickname = 'JUGADOR';
+        const uiHelper = window.BORED_UI;
 
-        function sanitizeNick(value){ return (value || 'JUGADOR').toUpperCase().replace(/[^A-Z0-9ÁÉÍÓÚÜÑ_-]/gi,'').slice(0,10) || 'JUGADOR'; }
+        function sanitizeNick(value){ return uiHelper?.normalizeNickname(value) || ''; }
         function loadTop10(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
         function saveTop10(entry){ const scores = loadTop10(); scores.push(entry); scores.sort((a,b)=>b.score-a.score || a.level-b.level || a.time-b.time); const top = scores.slice(0,10); localStorage.setItem(STORAGE_KEY, JSON.stringify(top)); return top; }
         function renderTop10(){ const scores = loadTop10(); bestDisplay.textContent = scores[0]?.score || 0; leaderboard.innerHTML = scores.length ? scores.map((s,i)=>`<div class="board-row"><span>#${i+1} ${s.nick}</span><strong>${s.score}</strong><span>N${s.level}</span></div>`).join('') : '<div class="muted">Todavía no hay vuelos épicos.</div>'; }
         function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify({ nick:nickname, level:currentLevel.id })); }
-        function loadSettings(){ try { const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); nickname = sanitizeNick(saved.nick); const savedLevel = LEVELS.find(l=>l.id === Number(saved.level)) || LEVELS[0]; currentLevel = savedLevel; } catch {} }
+        function loadSettings(){ try { const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); nickname = sanitizeNick(saved.nick) || 'JUGADOR'; const savedLevel = LEVELS.find(l=>l.id === Number(saved.level)) || LEVELS[0]; currentLevel = savedLevel; } catch {} }
         function showScreen(screen){ overlay.classList.remove('hidden'); [homeScreen,pauseScreen,gameOverScreen].forEach(node=>node.classList.add('hidden')); screen.classList.remove('hidden'); }
         function hideOverlay(){ overlay.classList.add('hidden'); }
         function setLevel(levelId){ currentLevel = LEVELS.find(level=>level.id === Number(levelId)) || LEVELS[0]; levelSelect.value = String(currentLevel.id); levelDisplay.textContent = currentLevel.id; levelPreview.innerHTML = `<div class="stats-row"><span>Nombre</span><strong>${currentLevel.name}</strong></div><div class="stats-row"><span>Velocidad tubos</span><strong>${currentLevel.speed.toFixed(1)}</strong></div><div class="stats-row"><span>Gap</span><strong>${currentLevel.gap}px</strong></div><div class="stats-row"><span>Spawn</span><strong>${currentLevel.spawn} frames</strong></div>`; saveSettings(); }
         function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; if (state === STATES.HOME) resetBird(); }
         function resetBird(){ bird.x = Math.max(84, canvas.width * .2); bird.y = canvas.height * .45; bird.vy = 0; }
         function resetGame(){ score = 0; frame = 0; pipes = []; particles = []; scoreDisplay.textContent = '0'; resetBird(); }
-        function startGame(levelId = currentLevel.id){ nickname = sanitizeNick(nickInput.value); nickInput.value = nickname; hudNick.textContent = nickname; setLevel(levelId); saveSettings(); resetGame(); state = STATES.PLAYING; hideOverlay(); }
+        function startGame(levelId = currentLevel.id){ const validatedNickname = uiHelper?.requireNickname(nickInput, { message: 'Ingresá tu nombre antes de despegar.' }) ?? sanitizeNick(nickInput.value); if (!validatedNickname) return; nickname = validatedNickname; nickInput.value = nickname; hudNick.textContent = nickname; setLevel(levelId); saveSettings(); resetGame(); state = STATES.PLAYING; hideOverlay(); }
         function pauseGame(){ if (state !== STATES.PLAYING) return; state = STATES.PAUSED; pauseSummary.innerHTML = `<div class="stats-row"><span>Nick</span><strong>${nickname}</strong></div><div class="stats-row"><span>Puntos</span><strong>${score}</strong></div><div class="stats-row"><span>Nivel</span><strong>${currentLevel.id} · ${currentLevel.name}</strong></div>`; showScreen(pauseScreen); }
         function resumeGame(){ if (state !== STATES.PAUSED) return; state = STATES.PLAYING; hideOverlay(); }
         function goHome(){ state = STATES.HOME; showScreen(homeScreen); renderTop10(); }
@@ -170,7 +177,7 @@
         document.getElementById('playAgainButton').addEventListener('click', () => startGame());
         document.getElementById('gameOverHomeButton').addEventListener('click', goHome);
         levelSelect.addEventListener('change', e => setLevel(e.target.value));
-        nickInput.addEventListener('input', e => { nickname = sanitizeNick(e.target.value); e.target.value = nickname; hudNick.textContent = nickname; saveSettings(); });
+        uiHelper?.attachNicknameValidation(nickInput, { onChange: (value) => { nickname = value; hudNick.textContent = value || '-'; saveSettings(); } });
         document.querySelectorAll('[data-quick-level]').forEach(btn => btn.addEventListener('click', () => startGame(btn.dataset.quickLevel)));
         window.addEventListener('resize', resize);
         window.addEventListener('keydown', e => {

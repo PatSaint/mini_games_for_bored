@@ -20,6 +20,7 @@
     --glow-red: 0 0 10px rgba(255, 7, 58, 0.6), 0 0 20px rgba(255, 7, 58, 0.3);
     --glow-yellow: 0 0 10px rgba(255, 204, 0, 0.6), 0 0 20px rgba(255, 204, 0, 0.3);
     --glow-blue: 0 0 10px rgba(0, 102, 255, 0.6), 0 0 20px rgba(0, 102, 255, 0.3);
+    --mobile-controls-offset: calc(82px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Reset y Estilos Generales */
@@ -647,7 +648,7 @@ body {
 /* Controles Táctiles (Gamepad Móvil) */
 .gamepad-container {
     position: absolute;
-    bottom: 24px;
+    bottom: var(--mobile-controls-offset);
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
@@ -658,6 +659,7 @@ body {
     align-items: center;
     gap: 24px;
     z-index: 40;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @media (max-width: 768px) {

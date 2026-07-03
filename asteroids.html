@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neon Asteroids | Juego Retro-Moderno</title>
+    <meta name="theme-color" content="#020204">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -14,6 +18,7 @@
             --border-color: rgba(255, 255, 255, 0.07);
             --neon-pink: #ff007f;
             --neon-cyan: #00f0ff;
+            --mobile-controls-offset: calc(118px + env(safe-area-inset-bottom, 0px));
             --glow-pink: 0 0 10px rgba(255, 0, 127, 0.6), 0 0 20px rgba(255, 0, 127, 0.3);
             --glow-cyan: 0 0 10px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.3);
         }
@@ -364,7 +369,7 @@
         /* Controles Táctiles (Gamepad Móvil) */
         .dpad-actions-layout {
             position: absolute;
-            bottom: 24px;
+            bottom: var(--mobile-controls-offset);
             left: 50%;
             transform: translateX(-50%);
             width: 100%;
@@ -375,6 +380,7 @@
             align-items: center;
             padding: 0 20px;
             z-index: 40;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
 
         @media (max-width: 768px) {
@@ -511,7 +517,7 @@
         <!-- Start Screen -->
         <div id="startScreen" class="menu-content">
             <h1 class="game-title">NEON <span>ASTEROIDS</span></h1>
-            <p class="game-subtitle">Ingresá tu nick, elegí el nivel inicial y limpiá el cinturón. ESC pausa y en táctil usá giro, empuje, fuego y pausa.</p>
+            <p class="game-subtitle" data-touch-text="Ingresá tu nick, elegí el nivel inicial y limpiá el cinturón. Tocá INICIAR y usá giro, empuje, fuego y pausa desde los botones táctiles." data-desktop-text="Ingresá tu nick, elegí el nivel inicial y limpiá el cinturón. ESC pausa y en táctil usá giro, empuje, fuego y pausa.">Ingresá tu nick, elegí el nivel inicial y limpiá el cinturón. ESC pausa y en táctil usá giro, empuje, fuego y pausa.</p>
             <div class="level-selector">
                 <label for="nicknameInput">NICKNAME (MAX 10)</label>
                 <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" autocomplete="off">
@@ -533,21 +539,33 @@
                 </div>
             </div>
             <div class="controls-guide">
-                <div class="control-row">
+                <div class="control-row" data-device-show="desktop">
                     <span>Rotar nave:</span>
                     <span class="control-key">◄ / ► (o A / D)</span>
                 </div>
-                <div class="control-row">
+                <div class="control-row" data-device-show="desktop">
                     <span>Propulsión (Empuje):</span>
                     <span class="control-key">▲ (o W)</span>
                 </div>
-                <div class="control-row">
+                <div class="control-row" data-device-show="desktop">
                     <span>Disparar Láser:</span>
                     <span class="control-key">ESPACIO</span>
                 </div>
+                <div class="control-row" data-device-show="touch">
+                    <span>Rotar nave:</span>
+                    <span class="control-key">BOTONES ◄ / ►</span>
+                </div>
+                <div class="control-row" data-device-show="touch">
+                    <span>Propulsión:</span>
+                    <span class="control-key">BOTÓN EMPUJE</span>
+                </div>
+                <div class="control-row" data-device-show="touch">
+                    <span>Disparo:</span>
+                    <span class="control-key">BOTÓN FUEGO</span>
+                </div>
                 <div class="control-row">
                     <span>Pausa:</span>
-                    <span class="control-key">ESC / PAUSA</span>
+                    <span class="control-key" data-touch-text="BOTÓN PAUSA" data-desktop-text="ESC / PAUSA">ESC / PAUSA</span>
                 </div>
             </div>
             <div class="stats-preview">
@@ -559,7 +577,8 @@
                 <a href="tetris.html" class="menu-back-btn">TETRIS</a>
                 <a href="simon.html" class="menu-back-btn">SIMON</a>
             </div>
-            <button id="startButton" class="action-btn">INICIAR VUELO</button>
+            <div data-install-slot></div>
+            <button id="startButton" class="action-btn" data-touch-text="TOCÁ PARA DESPEGAR" data-desktop-text="INICIAR VUELO">INICIAR VUELO</button>
             <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
         </div>
 
@@ -610,6 +629,7 @@
         </div>
     </div>
 
+    <script src="app-shell.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -652,6 +672,7 @@
         let highScore = topScores[0]?.score || 0;
         let lives = 3;
         let currentNickname = 'PLAYER';
+        const uiHelper = window.BORED_UI;
 
         let ship = { x: 0, y: 0, r: 12, angle: -Math.PI / 2, vx: 0, vy: 0, friction: 0.985, thrustPower: 0.16, rotateSpeed: 0.07, lastShot: 0, cooldown: 250 };
         let lasers = []; // {x, y, vx, vy, life}
@@ -663,18 +684,11 @@
 
         highScoreDisplay.textContent = highScore;
         nicknameInput.value = currentNickname;
-        nicknameInput.addEventListener('input', () => {
-            const sanitized = sanitizeNickname(nicknameInput.value);
-            if (nicknameInput.value !== sanitized) nicknameInput.value = sanitized;
-        });
+        uiHelper?.attachNicknameValidation(nicknameInput);
         renderTopScores();
 
         function sanitizeNickname(value) {
-            return (value || '')
-                .toUpperCase()
-                .replace(/[^A-Z0-9ÁÉÍÓÚÜÑ _-]/gi, '')
-                .trim()
-                .slice(0, 10) || 'PLAYER';
+            return uiHelper?.normalizeNickname(value) || '';
         }
 
         function loadTopScores() {
@@ -728,7 +742,7 @@
             
             // Restar espacio del mando en pantallas móviles
             if (window.innerWidth <= 768) {
-                height -= 170;
+                height -= 230;
             }
             canvas.height = Math.max(200, height);
 
@@ -875,7 +889,11 @@
         pauseRestartButton.addEventListener('click', startGame);
 
         function startGame() {
-            currentNickname = sanitizeNickname(nicknameInput.value);
+            const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: 'Ingresá tu nombre antes de despegar.' }) ?? sanitizeNickname(nicknameInput.value);
+            if (!validatedNickname) {
+                return;
+            }
+            currentNickname = validatedNickname;
             nicknameInput.value = currentNickname;
             updateLevelSettings();
             score = 0;

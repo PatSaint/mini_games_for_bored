@@ -76,6 +76,7 @@ let score = 0;
 let topScores = loadTopScores();
 let highScore = topScores[0]?.score || 0;
 let currentNickname = 'PLAYER';
+const uiHelper = window.BORED_UI;
 
 // Variables de Control del Bucle de Juego
 let lastTickTime = 0;
@@ -85,20 +86,11 @@ let pulseAnimationTime = 0; // Para la comida pulsante
 // Inicializar el récord en pantalla
 highScoreDisplay.textContent = highScore;
 nicknameInput.value = currentNickname;
-nicknameInput.addEventListener('input', () => {
-    const sanitized = sanitizeNickname(nicknameInput.value);
-    if (nicknameInput.value !== sanitized) {
-        nicknameInput.value = sanitized;
-    }
-});
+uiHelper?.attachNicknameValidation(nicknameInput);
 renderTopScores();
 
 function sanitizeNickname(value) {
-    return (value || '')
-        .toUpperCase()
-        .replace(/[^A-Z0-9ÁÉÍÓÚÜÑ _-]/gi, '')
-        .trim()
-        .slice(0, 10) || 'PLAYER';
+    return uiHelper?.normalizeNickname(value) || '';
 }
 
 function loadTopScores() {
@@ -273,7 +265,11 @@ mobilePauseButton.addEventListener('click', () => {
 // --- ACCIONES DEL JUEGO ---
 
 function startGame() {
-    currentNickname = sanitizeNickname(nicknameInput.value);
+    const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: 'Ingresá tu nombre antes de arrancar Snake.' }) ?? sanitizeNickname(nicknameInput.value);
+    if (!validatedNickname) {
+        return;
+    }
+    currentNickname = validatedNickname;
     nicknameInput.value = currentNickname;
     applySelectedLevel();
     // Reiniciar puntuaciones y gusanito

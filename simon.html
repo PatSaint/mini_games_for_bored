@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neon Simon | Juego Retro-Moderno</title>
+    <meta name="theme-color" content="#020204">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -389,7 +393,7 @@
         <!-- Start Screen -->
         <div id="startScreen" class="menu-content">
             <h1 class="game-title">NEON <span>SIMON</span></h1>
-            <p class="game-subtitle">Ingresá tu nick y elegí el nivel inicial: sube la longitud de apertura y acelera los flashes. Tocá o hacé clic en los colores; ESC pausa y al volver se repite la secuencia.</p>
+            <p class="game-subtitle" data-touch-text="Ingresá tu nick y elegí el nivel inicial: sube la longitud de apertura y acelera los flashes. Tocá los colores; al volver desde pausa Simon repite la secuencia." data-desktop-text="Ingresá tu nick y elegí el nivel inicial: sube la longitud de apertura y acelera los flashes. Tocá o hacé clic en los colores; ESC pausa y al volver se repite la secuencia.">Ingresá tu nick y elegí el nivel inicial: sube la longitud de apertura y acelera los flashes. Tocá o hacé clic en los colores; ESC pausa y al volver se repite la secuencia.</p>
             <div class="level-selector">
                 <label for="nicknameInput">NICKNAME (MAX 10)</label>
                 <input id="nicknameInput" class="menu-input" type="text" maxlength="10" placeholder="PLAYER" autocomplete="off">
@@ -413,13 +417,14 @@
                 <a href="snake.html" class="menu-back-btn">SNAKE</a>
                 <a href="tetris.html" class="menu-back-btn">TETRIS</a>
             </div>
-            <button id="startButton" class="action-btn">INICIAR JUEGO</button>
+            <div data-install-slot></div>
+            <button id="startButton" class="action-btn" data-touch-text="TOCÁ PARA EMPEZAR" data-desktop-text="INICIAR JUEGO">INICIAR JUEGO</button>
             <a href="index.html" class="menu-back-btn">VOLVER AL MENÚ</a>
         </div>
 
         <div id="pauseScreen" class="menu-content hidden">
             <h2 class="game-title">PAUSA <span>SIMON</span></h2>
-            <p class="game-subtitle">Reanudá con ESC. Para no confundirte, al volver Simon repite toda la secuencia actual.</p>
+            <p class="game-subtitle" data-touch-text="Reanudá con el botón y, para no confundirte, Simon repite toda la secuencia actual." data-desktop-text="Reanudá con ESC. Para no confundirte, al volver Simon repite toda la secuencia actual.">Reanudá con ESC. Para no confundirte, al volver Simon repite toda la secuencia actual.</p>
             <div class="stats-preview">
                 <div class="preview-item"><span class="preview-lbl">Jugador:</span><span id="pauseNick" class="preview-val">PLAYER</span></div>
                 <div class="preview-item"><span class="preview-lbl">Secuencia lograda:</span><span id="pauseScore" class="preview-val">0</span></div>
@@ -464,6 +469,7 @@
         </div>
     </div>
 
+    <script src="app-shell.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -506,6 +512,7 @@
         let topScores = loadTopScores();
         let highScore = topScores[0]?.score || 0;
         let currentNickname = 'PLAYER';
+        const uiHelper = window.BORED_UI;
         let scheduledTimeouts = [];
 
         let diskSize = 360;
@@ -524,18 +531,11 @@
         let pulseWaves = []; // Efecto de ondas expansivas al tocar
         highScoreDisplay.textContent = highScore;
         nicknameInput.value = currentNickname;
-        nicknameInput.addEventListener('input', () => {
-            const sanitized = sanitizeNickname(nicknameInput.value);
-            if (nicknameInput.value !== sanitized) nicknameInput.value = sanitized;
-        });
+        uiHelper?.attachNicknameValidation(nicknameInput);
         renderTopScores();
 
         function sanitizeNickname(value) {
-            return (value || '')
-                .toUpperCase()
-                .replace(/[^A-Z0-9ÁÉÍÓÚÜÑ _-]/gi, '')
-                .trim()
-                .slice(0, 10) || 'PLAYER';
+            return uiHelper?.normalizeNickname(value) || '';
         }
 
         function loadTopScores() {
@@ -707,7 +707,11 @@
 
         function startGame() {
             clearScheduled();
-            currentNickname = sanitizeNickname(nicknameInput.value);
+            const validatedNickname = uiHelper?.requireNickname(nicknameInput, { message: 'Ingresá tu nombre antes de arrancar Simon.' }) ?? sanitizeNickname(nicknameInput.value);
+            if (!validatedNickname) {
+                return;
+            }
+            currentNickname = validatedNickname;
             nicknameInput.value = currentNickname;
             sequence = [];
             score = 0;
